@@ -48,60 +48,60 @@ How the user, Claude Code, subagents, the framework library, MCP servers, and on
 ```mermaid
 flowchart TB
     USER([User])
-    USER -->|types /init /plan /run| CC[Claude Code]
+    USER -->|"types /init /plan /run"| CC["Claude Code"]
 
     subgraph CC_INNER[" Claude Code surface "]
-        SLASH[Slash commands<br/>.claude/commands/*.md]
-        AGENTS[Subagents<br/>.claude/agents/*.md]
+        SLASH["Slash commands<br/>.claude/commands/*.md"]
+        AGENTS["Subagents<br/>.claude/agents/*.md"]
     end
 
     CC --> CC_INNER
     SLASH -.invokes via Task tool.-> AGENTS
 
     subgraph MCP[" MCP servers (stdio) "]
-        SKETCH_MCP[eval_sketch_server]
-        RETR_MCP[retrieval_server]
-        BUD_MCP[budget_server]
-        JUDGE_MCP[judge_server]
+        SKETCH_MCP["eval_sketch_server"]
+        RETR_MCP["retrieval_server"]
+        BUD_MCP["budget_server"]
+        JUDGE_MCP["judge_server"]
     end
 
     AGENTS -->|JSON-RPC| MCP
 
     subgraph LIB[" Framework library lib/ "]
-        SCHEMAS[schemas/<br/>pydantic v2 models]
-        CAPS[capabilities/<br/>rag_qa, nlq, research,<br/>insight, chatbot, search]
-        SKETCH_PKG[sketch/<br/>E1-E7 layers + queries]
-        ENGINE[state.py, run.py,<br/>finalize.py, skeptic.py,<br/>bandit.py, doom_loop.py]
-        REGISTRY[registry.py<br/>LLM/embed/retrieve<br/>chokepoint]
+        SCHEMAS["schemas/<br/>pydantic v2 models"]
+        CAPS["capabilities/<br/>rag_qa, nlq, research,<br/>insight, chatbot, search"]
+        SKETCH_PKG["sketch/<br/>E1-E7 layers + queries"]
+        ENGINE["state.py, run.py,<br/>finalize.py, skeptic.py,<br/>bandit.py, doom_loop.py"]
+        REGISTRY["registry.py<br/>LLM/embed/retrieve<br/>chokepoint"]
     end
 
     AGENTS -->|Python calls| LIB
     MCP -->|reads| LIB
 
     subgraph PROJECT[" Per-project workspace projects/&lt;name&gt;/ "]
-        MISSION[MISSION.json]
-        LOG[experiment_log.jsonl]
-        BUDGET[budget.jsonl]
-        STATE[RUN_STATE.json]
-        SKETCH_FILES[sketch/e1-e7.jsonl]
-        INBOX[memory/agent_inbox/iter_NNNN/]
-        FINAL[results/FINAL.md]
+        MISSION["MISSION.json"]
+        LOG["experiment_log.jsonl"]
+        BUDGET["budget.jsonl"]
+        STATE["RUN_STATE.json"]
+        SKETCH_FILES["sketch/e1-e7.jsonl"]
+        INBOX["memory/agent_inbox/iter_NNNN/"]
+        FINAL["results/FINAL.md"]
     end
 
     LIB -->|writes| PROJECT
     MCP -->|reads| PROJECT
-    AGENTS -->|reads / writes via inbox| INBOX
+    AGENTS -->|"reads / writes via inbox"| INBOX
 
     subgraph KNOWLEDGE[" Cross-project knowledge/ "]
-        K_PROMPT[prompt_pattern_library.jsonl]
-        K_FAIL[failure_modes.jsonl]
-        K_RAG[rag_recipes.jsonl]
-        K_ROUTE[model_route_priors.jsonl]
-        K_JUDGE[eval_judge_templates.jsonl]
+        K_PROMPT["prompt_pattern_library.jsonl"]
+        K_FAIL["failure_modes.jsonl"]
+        K_RAG["rag_recipes.jsonl"]
+        K_ROUTE["model_route_priors.jsonl"]
+        K_JUDGE["eval_judge_templates.jsonl"]
     end
 
-    PROJECT -->|/contribute<br/>anonymized| KNOWLEDGE
-    KNOWLEDGE -->|/init reads<br/>via retrieval_server| MCP
+    PROJECT -->|"/contribute<br/>anonymized"| KNOWLEDGE
+    KNOWLEDGE -->|"/init reads<br/>via retrieval_server"| MCP
 ```
 
 **Key invariants:**
@@ -315,27 +315,27 @@ Why every project on the *same* framework install gets stronger over time.
 ```mermaid
 flowchart LR
     subgraph PROJ_A[" Project A (finalized) "]
-        A_LOG[experiment_log.jsonl]
-        A_FINAL[results/FINAL.md]
-        A_BUNDLE[results/knowledge_bundle.json]
+        A_LOG["experiment_log.jsonl"]
+        A_FINAL["results/FINAL.md"]
+        A_BUNDLE["results/knowledge_bundle.json"]
     end
 
-    A_LOG --> CUR[Curator]
+    A_LOG --> CUR["Curator"]
     CUR --> A_BUNDLE
-    A_BUNDLE -->|/contribute| EXTRACT[tools/post_merge_extractor.py<br/>anonymizes:<br/>strips raw text,<br/>tags semantic roles]
+    A_BUNDLE -->|"/contribute"| EXTRACT["tools/post_merge_extractor.py<br/>anonymizes:<br/>strips raw text,<br/>tags semantic roles"]
 
-    EXTRACT -->|appends| KNOW[(knowledge/)]
+    EXTRACT -->|appends| KNOW[("knowledge/")]
 
-    KNOW --> K1[prompt_pattern_library.jsonl]
-    KNOW --> K2[failure_modes.jsonl]
-    KNOW --> K3[rag_recipes.jsonl]
-    KNOW --> K4[model_route_priors.jsonl]
-    KNOW --> K5[eval_judge_templates.jsonl]
+    KNOW --> K1["prompt_pattern_library.jsonl"]
+    KNOW --> K2["failure_modes.jsonl"]
+    KNOW --> K3["rag_recipes.jsonl"]
+    KNOW --> K4["model_route_priors.jsonl"]
+    KNOW --> K5["eval_judge_templates.jsonl"]
 
     subgraph PROJ_B[" Project B (new) "]
-        B_INIT[/init/]
-        B_PLAN[/plan/]
-        B_STRAT[Strategist iter 1+]
+        B_INIT["/init"]
+        B_PLAN["/plan"]
+        B_STRAT["Strategist iter 1+"]
     end
 
     K1 -.via retrieval_server MCP.-> B_PLAN
@@ -361,22 +361,22 @@ What flows from user goal to final recommendation, in terms of pydantic schemas.
 
 ```mermaid
 flowchart LR
-    GOAL["User goal<br/>(free-form prose)"] --> INIT[/init]
-    INIT --> PROFILE[INIT_PROFILE.json<br/>+ E1 layer]
-    PROFILE --> PLAN[/plan]
-    PLAN --> MISSION[(Mission)]
-    MISSION --> SEEDS[HYPOTHESES.jsonl<br/>filtered from<br/>universal_seeds.jsonl]
-    SEEDS --> RUN[/run]
+    GOAL["User goal<br/>(free-form prose)"] --> INIT["/init"]
+    INIT --> PROFILE["INIT_PROFILE.json<br/>+ E1 layer"]
+    PROFILE --> PLAN["/plan"]
+    PLAN --> MISSION[("Mission")]
+    MISSION --> SEEDS["HYPOTHESES.jsonl<br/>filtered from<br/>universal_seeds.jsonl"]
+    SEEDS --> RUN["/run"]
 
-    RUN --> VARIANT[(Variant<br/>parent + diff)]
-    VARIANT --> TRIAL[(TrialResult<br/>metrics + CIs +<br/>failure modes)]
-    TRIAL --> LOG[experiment_log.jsonl<br/>append-only]
+    RUN --> VARIANT[("Variant<br/>parent + diff")]
+    VARIANT --> TRIAL[("TrialResult<br/>metrics + CIs +<br/>failure modes")]
+    TRIAL --> LOG["experiment_log.jsonl<br/>append-only"]
     LOG --> RUN
 
-    LOG --> FIN[Curator finalize]
-    FIN --> REC[(FinalRecommendation<br/>confidence tier +<br/>counterfactual + CI)]
-    REC --> FINAL[FINAL.md]
-    REC --> BUNDLE[knowledge_bundle.json]
+    LOG --> FIN["Curator finalize"]
+    FIN --> REC[("FinalRecommendation<br/>confidence tier +<br/>counterfactual + CI")]
+    REC --> FINAL["FINAL.md"]
+    REC --> BUNDLE["knowledge_bundle.json"]
 ```
 
 The arrow from LOG back to RUN is the loop — every iteration reads the prior log to compute IterationBrief.
