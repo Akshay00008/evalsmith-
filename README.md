@@ -385,6 +385,8 @@ The arrow from LOG back to RUN is the loop — every iteration reads the prior l
 
 ## Quick start
 
+> **Want a full hands-on walkthrough with a worked example?** See **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md`.
+
 ### Prerequisites
 
 - Python 3.9+ (works on 3.10/3.11/3.12 too)
