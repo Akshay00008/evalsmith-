@@ -1,0 +1,41 @@
+# Python build / cache artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Test + tool caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Per-project scratch — projects/.templates/_project_template/.gitignore
+# already excludes per-iter scratch *inside* a project workspace, but we
+# also gitignore the workspace contents at framework level so a user's
+# private project data never accidentally ends up in this framework repo.
+# Project workspaces are meant to live in their own git repos (or unversioned)
+# — only the template skeleton belongs here.
+projects/*/
+!projects/.templates/
+
+# Editor / OS detritus
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local Claude Code settings overrides — settings.example.json is the
+# committed one; settings.json / settings.local.json are personal.
+.claude/settings.json
+.claude/settings.local.json
+
+# Env files
+.env
+.env.*

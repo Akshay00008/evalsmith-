@@ -1,0 +1,7 @@
+{
+  "name": "PROJECT_NAME_PLACEHOLDER",
+  "framework_version": "0.1.0",
+  "status": "created",
+  "created_at_unix": 0,
+  "notes": "Status transitions: created -> initialized (after /init) -> planned (after /plan) -> running (during /run) -> terminated -> finalized (after Curator)."
+}

@@ -1,0 +1,12 @@
+# Per-project gitignore.
+# We commit MISSION.json + experiment_log.jsonl + budget.jsonl + RUN_STATE.json
+# + sketch/manifest.json + results/FINAL.md, but never per-iteration scratch.
+
+results/iter_*/
+results/synthesis_*.md
+memory/agent_inbox/
+sketch/e*.jsonl
+sketch/e*.json
+data/corpus/
+data/raw/
+*.tmp

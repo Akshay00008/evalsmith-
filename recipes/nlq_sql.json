@@ -1,0 +1,17 @@
+{
+  "recipe_id": "nlq_sql",
+  "description": "Natural-language to SQL. Eval is execution-equivalence against a sandboxed read-only DB.",
+  "composition": {
+    "task_modality": "nlq_to_query",
+    "eval_strategy": "tool_call_match",
+    "latency_budget_ms_p95": 5000,
+    "cost_budget_usd_per_1k": 1.0,
+    "safety_floor": 0.99,
+    "recommendation_shape": "variant_diff"
+  },
+  "success_criteria": [
+    {"metric": "execution_equivalence", "operator": ">=", "target": 0.85, "operational_floor": 0.70, "is_primary": true, "weight": 1.0},
+    {"metric": "syntactic_validity", "operator": ">=", "target": 0.98, "operational_floor": 0.90, "is_primary": false, "weight": 0.5}
+  ],
+  "default_domain": "extraction"
+}

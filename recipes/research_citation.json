@@ -1,0 +1,18 @@
+{
+  "recipe_id": "research_citation",
+  "description": "Multi-step research agent with citation grounding. Judge scores citation_quality + faithfulness + coverage.",
+  "composition": {
+    "task_modality": "research_agent",
+    "eval_strategy": "judge_llm",
+    "latency_budget_ms_p95": 30000,
+    "cost_budget_usd_per_1k": 10.0,
+    "safety_floor": 0.95,
+    "recommendation_shape": "config_bundle"
+  },
+  "success_criteria": [
+    {"metric": "citation_quality", "operator": ">=", "target": 0.85, "operational_floor": 0.65, "is_primary": true, "weight": 1.0},
+    {"metric": "faithfulness", "operator": ">=", "target": 0.90, "operational_floor": 0.75, "is_primary": false, "weight": 1.0},
+    {"metric": "coverage", "operator": ">=", "target": 0.75, "operational_floor": 0.55, "is_primary": false, "weight": 0.5}
+  ],
+  "default_domain": "search_qa"
+}

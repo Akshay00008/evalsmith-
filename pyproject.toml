@@ -1,0 +1,43 @@
+# pyproject.toml
+# Project metadata + console script entry point.
+# The `genai` CLI is the *non-Claude-Code* surface; the slash commands in
+# `.claude/commands/` are the *Claude-Code* surface. Both ultimately call
+# into lib/* — never into each other.
+
+[project]
+name = "agentic-genai-dev-tool"
+version = "0.1.0"
+description = "Deterministic, multi-agent orchestration framework for GenAI / LLM application development (RAG, NLQ, research agents, insight agents, chatbots, search/recommendation engines)."
+requires-python = ">=3.10"
+dependencies = [
+    # Schema validation is the spine of the system — every cross-agent
+    # payload is a pydantic model. Version pinned to v2 because we use
+    # `model_validate` / `model_dump` style API.
+    "pydantic>=2.5",
+    # Light numerical work for sketch summarization.
+    "numpy>=1.24",
+    # Typer powers the CLI; rich gives us pretty tables for `genai list`.
+    "typer>=0.9",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+# Optional dependencies — the framework runs on the core deps alone, but
+# these unlock specific capabilities. The registry in lib/registry.py
+# uses `importlib` and falls back gracefully if any of these are missing.
+llm = ["anthropic>=0.40", "openai>=1.40"]
+embed = ["sentence-transformers>=2.7"]
+rag = ["chromadb>=0.4", "rank-bm25>=0.2"]
+test = ["pytest>=7.4"]
+
+[project.scripts]
+# Single CLI entry point — see lib/cli.py for verbs.
+genai = "lib.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lib*"]

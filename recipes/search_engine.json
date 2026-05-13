@@ -1,0 +1,17 @@
+{
+  "recipe_id": "search_engine",
+  "description": "Ranking pipeline with LLM rerank. Eval is ranking metrics (NDCG@10, MAP@10) on gold-ranked doc lists.",
+  "composition": {
+    "task_modality": "search_engine",
+    "eval_strategy": "exact_match",
+    "latency_budget_ms_p95": 1500,
+    "cost_budget_usd_per_1k": 0.3,
+    "safety_floor": 0.99,
+    "recommendation_shape": "router_policy"
+  },
+  "success_criteria": [
+    {"metric": "ndcg_at_10", "operator": ">=", "target": 0.80, "operational_floor": 0.60, "is_primary": true, "weight": 1.0},
+    {"metric": "map_at_10",  "operator": ">=", "target": 0.70, "operational_floor": 0.50, "is_primary": false, "weight": 1.0}
+  ],
+  "default_domain": "search_qa"
+}

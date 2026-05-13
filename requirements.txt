@@ -1,0 +1,6 @@
+# Core runtime dependencies. Optional extras are declared in pyproject.toml
+# under [project.optional-dependencies]; install with e.g. `pip install -e .[llm,rag]`.
+pydantic>=2.5
+numpy>=1.24
+typer>=0.9
+rich>=13.0

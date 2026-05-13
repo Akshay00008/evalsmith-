@@ -1,0 +1,25 @@
+{
+  "// purpose": "Example .claude/settings.json wiring the four MCP servers into Claude Code. Copy this to settings.json (or settings.local.json) and set GENAI_PROJECT_DIR to the absolute path of the active project workspace.",
+  "mcpServers": {
+    "eval_sketch": {
+      "command": "python",
+      "args": ["mcp_servers/eval_sketch_server.py"],
+      "env": {"GENAI_PROJECT_DIR": "projects/<active_project_name>"}
+    },
+    "retrieval": {
+      "command": "python",
+      "args": ["mcp_servers/retrieval_server.py"],
+      "env": {"GENAI_PROJECT_DIR": "projects/<active_project_name>"}
+    },
+    "budget": {
+      "command": "python",
+      "args": ["mcp_servers/budget_server.py"],
+      "env": {"GENAI_PROJECT_DIR": "projects/<active_project_name>"}
+    },
+    "judge": {
+      "command": "python",
+      "args": ["mcp_servers/judge_server.py"],
+      "env": {"GENAI_PROJECT_DIR": "projects/<active_project_name>"}
+    }
+  }
+}
