@@ -1,5 +1,20 @@
-# Core runtime dependencies. Optional extras are declared in pyproject.toml
-# under [project.optional-dependencies]; install with e.g. `pip install -e .[llm,rag]`.
+# Core runtime dependencies. These four are what the framework absolutely
+# needs to import — schemas, sketch math, CLI tooling.
+#
+# Optional extras (LLM SDKs, PDF tools, DB drivers, Streamlit UI, etc.)
+# live in pyproject.toml under [project.optional-dependencies] so users
+# only install what their workflow actually needs.
+#
+# To install EVERYTHING:
+#   pip install -r requirements-full.txt
+#   OR equivalently:
+#   pip install -e ".[all]"
+#
+# To install just one workflow:
+#   pip install -e ".[llm]"   real LLM calls
+#   pip install -e ".[rag]"   PDFs + BM25
+#   pip install -e ".[db]"    NLQ with real DBs
+#   pip install -e ".[ui]"    Streamlit web UI for non-developers
 pydantic>=2.5
 numpy>=1.24
 typer>=0.9

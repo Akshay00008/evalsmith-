@@ -1,0 +1,47 @@
+# requirements-full.txt
+# Full dependency list — every optional extra included. Use this when you
+# want one `pip install -r` to get everything ready.
+#
+# For a leaner install pick from the named extras groups in pyproject.toml:
+#   pip install -e ".[llm]"        # just real LLM calls
+#   pip install -e ".[ui]"         # just the Streamlit web UI
+#   pip install -e ".[rag]"        # PDF ingestion + BM25
+#   pip install -e ".[db]"         # NLQ with real databases
+#   pip install -e ".[all]"        # equivalent to this file
+#
+# requirements.txt (core only) has just 4 modules — pydantic, numpy, typer, rich.
+
+# Core (must-have) ----------------------------------------------------
+pydantic>=2.5
+numpy>=1.24
+typer>=0.9
+rich>=13.0
+
+# LLM SDKs -----------------------------------------------------------
+anthropic>=0.40
+openai>=1.40
+
+# Embeddings (dense retrieval) ---------------------------------------
+sentence-transformers>=2.7
+
+# RAG ingestion + retrievers ----------------------------------------
+pypdf>=4.0
+rank-bm25>=0.2
+chromadb>=0.4
+
+# Databases (NLQ) ---------------------------------------------------
+# SQLAlchemy is the universal abstraction; per-DB drivers below.
+sqlalchemy>=2.0
+psycopg[binary]>=3.1    # PostgreSQL
+pymysql>=1.1            # MySQL / MariaDB
+# Oracle + MSSQL drivers are omitted here because they depend on
+# system-installed client libraries — install per-machine:
+#   pip install oracledb         (Oracle)
+#   pip install pyodbc           (MSSQL, also needs ODBC Driver 18)
+
+# Web UI (Streamlit) ------------------------------------------------
+streamlit>=1.30
+pandas>=2.0
+
+# Testing -----------------------------------------------------------
+pytest>=7.4

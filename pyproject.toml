@@ -8,7 +8,7 @@
 name = "agentic-genai-dev-tool"
 version = "0.1.0"
 description = "Deterministic, multi-agent orchestration framework for GenAI / LLM application development (RAG, NLQ, research agents, insight agents, chatbots, search/recommendation engines)."
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     # Schema validation is the spine of the system — every cross-agent
     # payload is a pydantic model. Version pinned to v2 because we use
@@ -44,6 +44,17 @@ db = ["sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1"]
 # (PMs / BAs / analysts). Run with `streamlit run webui/app.py`.
 ui = ["streamlit>=1.30", "pandas>=2.0"]
 test = ["pytest>=7.4"]
+# Convenience meta-extra: installs every optional dependency in one go.
+# Use this when you don't want to think about which extras you need:
+#   pip install -e ".[all]"
+all = [
+    "anthropic>=0.40", "openai>=1.40",
+    "sentence-transformers>=2.7",
+    "pypdf>=4.0", "rank-bm25>=0.2", "chromadb>=0.4",
+    "sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1",
+    "streamlit>=1.30", "pandas>=2.0",
+    "pytest>=7.4",
+]
 
 [project.scripts]
 # Single CLI entry point — see lib/cli.py for verbs.

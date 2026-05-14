@@ -402,10 +402,25 @@ The arrow from LOG back to RUN is the loop — every iteration reads the prior l
 ```bash
 git clone https://github.com/AkshayDat/evalsmith-.git
 cd evalsmith-
+
+# Three install options — pick one:
+
+# 1. Core only (~4 deps) — works for stub-mode exploration
 pip install -e .
-# Optional extras:
-pip install -e ".[llm,rag,test]"
+
+# 2. Just what you need (recommended)
+pip install -e ".[llm]"               # real LLM calls
+pip install -e ".[ui]"                # Streamlit web UI
+pip install -e ".[rag]"               # PDF ingestion + BM25
+pip install -e ".[db]"                # NLQ with real databases
+pip install -e ".[llm,rag,db,ui]"     # combine groups
+
+# 3. Everything (~20 deps, simplest)
+pip install -e ".[all]"
+# or:  pip install -r requirements-full.txt
 ```
+
+The base `requirements.txt` lists only 4 packages on purpose — those are the core. Everything else (Streamlit, pypdf, SQLAlchemy, Anthropic SDK, …) is opt-in via the named extras groups so you don't get bloat you won't use.
 
 ### Create your first project
 
