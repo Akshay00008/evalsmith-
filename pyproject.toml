@@ -27,7 +27,10 @@ dependencies = [
 # uses `importlib` and falls back gracefully if any of these are missing.
 llm = ["anthropic>=0.40", "openai>=1.40"]
 embed = ["sentence-transformers>=2.7"]
-rag = ["chromadb>=0.4", "rank-bm25>=0.2"]
+# `rag` extras: pypdf for the PDF ingestion CLI (tools/ingest_pdfs.py),
+# rank-bm25 as a faster alternative to our built-in pure-Python BM25.
+# chromadb is optional — only needed if you wire up a real vector DB.
+rag = ["pypdf>=4.0", "rank-bm25>=0.2", "chromadb>=0.4"]
 test = ["pytest>=7.4"]
 
 [project.scripts]

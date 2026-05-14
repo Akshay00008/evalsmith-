@@ -207,12 +207,37 @@ def retrieve(*, query: str, config: RetrievalConfig, corpus_dir=None) -> list[di
     {doc_id, text} and optional {input_tokens, cost_usd, latency_ms} for
     cost attribution.
 
-    Stub mode returns deterministic results based on a hash of the query,
-    so RAG trials reproduce exactly. Real backends plug in chroma / faiss /
-    bm25 here."""
+    Resolution order:
+      1. If the caller passed a `corpus_dir` (a Path to a project workspace)
+         AND that project has a non-empty `data/corpus.jsonl`, dispatch to
+         `lib.corpus` for real BM25/dense/hybrid retrieval.
+      2. Otherwise fall through to a deterministic stub keyed on the query
+         hash — useful for tests and projects that don't actually have a
+         corpus on disk yet.
+
+    The stub is *not* a feature — it's a fallback so capabilities can be
+    exercised end-to-end without ingesting documents first. Real RAG
+    projects should always have `corpus.jsonl` populated.
+    """
     if not config.enabled or config.retriever_kind == "none":
         return []
-    # Deterministic stub.
+
+    # Real-corpus path. Lazy-imported because the corpus module pulls in
+    # math/regex; we don't want to pay that cost in chatbot/NLQ runs that
+    # never retrieve.
+    from pathlib import Path as _Path
+    from . import corpus as corpus_mod
+    if corpus_dir is not None and corpus_mod.has_corpus(_Path(corpus_dir)):
+        cdir = _Path(corpus_dir)
+        if config.retriever_kind == "bm25":
+            return corpus_mod.bm25_retrieve(cdir, query, config.top_k)
+        if config.retriever_kind == "dense":
+            return corpus_mod.dense_retrieve(cdir, query, config.top_k, embedder=config.embedder)
+        if config.retriever_kind == "hybrid":
+            return corpus_mod.hybrid_retrieve(cdir, query, config.top_k, embedder=config.embedder)
+
+    # Fallback: deterministic stub. The hash-derived doc ids let trial
+    # reproducibility hold even without a real corpus.
     import hashlib
     seed = int(hashlib.sha256(query.encode()).hexdigest()[:8], 16)
     return [

@@ -49,7 +49,14 @@ def execute_trial(
     """
     capability = get_capability(mission.composition.task_modality)
     knowledge_snippets = retrieval_mod.load_snippets_for(mission)
-    ctx = CapabilityContext(mission=mission, eval_set=eval_set, knowledge_snippets=knowledge_snippets)
+    # project_dir is threaded into the context so retrieval-flavored
+    # capabilities (rag_qa, search_engine) can locate the corpus.jsonl
+    # without re-discovering it from the trial id.
+    ctx = CapabilityContext(
+        mission=mission, eval_set=eval_set,
+        knowledge_snippets=knowledge_snippets,
+        project_dir=project_dir,
+    )
 
     started = time.time()
 

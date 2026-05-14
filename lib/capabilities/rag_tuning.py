@@ -42,12 +42,13 @@ class RagQaCapability(CapabilityBase):
     ]
 
     def run_single_case(self, variant: Variant, case: EvalCase, ctx: CapabilityContext) -> RunOutput:
-        # 1. Retrieve. Delegated to a pluggable vectorstore in the registry
-        #    so we can swap dense/bm25/hybrid behind one interface.
+        # 1. Retrieve. The registry resolves to lib/corpus.py when the
+        #    project has a real corpus.jsonl; otherwise falls back to a
+        #    deterministic stub keyed on the query hash.
         retrieved = model_registry.retrieve(
             query=str(case.input),
             config=variant.retrieval,
-            corpus_dir=ctx.mission_corpus_dir() if hasattr(ctx.mission, "mission_corpus_dir") else None,
+            corpus_dir=ctx.project_dir,
         )
 
         # 2. Construct the prompt. The retrieved docs are concatenated

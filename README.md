@@ -385,7 +385,9 @@ The arrow from LOG back to RUN is the loop — every iteration reads the prior l
 
 ## Quick start
 
-> **Want a full hands-on walkthrough with a worked example?** See **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md`.
+> **Hands-on guides:**
+> - **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md`.
+> - **[docs/PDF_RAG_GUIDE.md](docs/PDF_RAG_GUIDE.md)** — how to point evalsmith at a folder of PDFs and tune a RAG pipeline over them.
 
 ### Prerequisites
 

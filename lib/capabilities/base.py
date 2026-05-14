@@ -5,8 +5,14 @@
 
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any, Optional, TYPE_CHECKING
 from abc import ABC, abstractmethod
+
+if TYPE_CHECKING:
+    # Imported only for the type annotation; avoids a runtime dependency
+    # cycle since pathlib is std-lib but importing Path eagerly is
+    # unnecessary for the dataclass to function.
+    from pathlib import Path
 
 from ..schemas.mission import Mission
 from ..schemas.variant import Variant, TechniqueFamily
@@ -22,6 +28,10 @@ class CapabilityContext:
     # lib/retrieval.py from knowledge/ at /run start). May be empty for
     # the very first project on a fresh framework install.
     knowledge_snippets: list[dict]
+    # Absolute path to the project workspace. Used by retrieval-flavored
+    # capabilities to locate the per-project corpus.jsonl. Optional —
+    # capabilities that don't retrieve (chatbot, nlq) can ignore it.
+    project_dir: Optional["Path"] = None  # type: ignore[name-defined]
 
 
 class CapabilityBase(ABC):

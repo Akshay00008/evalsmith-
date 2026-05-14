@@ -38,11 +38,13 @@ class SearchEngineCapability(CapabilityBase):
     ]
 
     def run_single_case(self, variant: Variant, case: EvalCase, ctx: CapabilityContext) -> RunOutput:
-        # 1. Generate candidates from the retriever.
+        # 1. Generate candidates from the retriever. corpus_dir = the
+        #    project workspace; registry checks for data/corpus.jsonl and
+        #    routes to BM25/dense/hybrid as configured by the Variant.
         candidates = model_registry.retrieve(
             query=str(case.input),
             config=variant.retrieval,
-            corpus_dir=None,
+            corpus_dir=ctx.project_dir,
         )
         # 2. If a reranker is configured, call it; otherwise pass-through.
         if variant.retrieval.reranker:
