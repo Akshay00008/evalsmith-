@@ -29,10 +29,15 @@ from typing import Optional
 import json
 import sys
 
+import logging
+import traceback
+
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+logger = logging.getLogger("evalsmith.web")
 
 # Make `lib`, `webui`, `tools` importable from anywhere.
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -54,6 +59,16 @@ from web import services  # noqa: E402
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
+
+# Configure logging so our logger.error() calls surface in Docker / uvicorn
+# output. Uvicorn sets up its own handler on the root logger; this just
+# makes sure our "evalsmith.*" loggers propagate at the right level.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s — %(message)s",
+    datefmt="%H:%M:%S",
+)
+logging.getLogger("evalsmith").setLevel(logging.DEBUG)
 
 app = FastAPI(
     title="evalsmith web",
@@ -422,8 +437,11 @@ async def run_start(name: str, max_iters: int = Form(8)):
                 yield f"data: {json.dumps(payload)}\n\n"
                 if evt.terminated_reason:
                     break
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e), 'phase': 'error'})}\n\n"
+        except Exception as exc:
+            # Log full traceback to Docker / uvicorn stderr so the operator
+            # can diagnose failures without needing a browser.
+            logger.error("run_optimization raised an exception:\n%s", traceback.format_exc())
+            yield f"data: {json.dumps({'error': str(exc), 'phase': 'error', 'iter': 0})}\n\n"
         yield "event: done\ndata: {}\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream")
@@ -433,8 +451,11 @@ async def run_start(name: str, max_iters: int = Form(8)):
 async def run_finalize(name: str):
     try:
         result = services.finalize_project(name)
-    except Exception as e:
-        raise HTTPException(500, f"Finalize failed: {e}")
+    except Exception as exc:
+        # Always log the full traceback — the detail string visible in the UI
+        # loses the stack frames which we need to diagnose root causes.
+        logger.error("finalize_project(%s) raised:\n%s", name, traceback.format_exc())
+        raise HTTPException(500, f"Finalize failed: {exc}")
     return JSONResponse(result)
 
 

@@ -10,9 +10,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 import json
+import logging
 import shutil
 import time
 import re
+
+logger = logging.getLogger("evalsmith.services")
 
 
 # ---------------------------------------------------------------------------
@@ -439,30 +442,58 @@ def finalize_project(name: str) -> dict:
     from lib.headless_optimizer import pin_winning_variant
 
     p = project_dir(name)
-    mission = Mission.model_validate_json((p / "MISSION.json").read_text(encoding="utf-8"))
+
+    # --- 1. Load Mission --------------------------------------------------
+    mission_path = p / "MISSION.json"
+    if not mission_path.exists():
+        raise ValueError("No MISSION.json found — lock a mission first.")
+    mission = Mission.model_validate_json(mission_path.read_text(encoding="utf-8"))
+
+    # --- 2. Load trial log (may be empty if no iterations ran yet) --------
     log_rows = read_log(name)
-    if not log_rows:
-        raise ValueError("No trials run yet — nothing to finalize.")
-    trials = [TrialResult.model_validate(r) for r in log_rows]
+
+    # Parse what we have, skipping any rows that fail validation (corrupt
+    # writes are possible if a Docker restart happened mid-write).
+    trials: list[TrialResult] = []
+    for i, row in enumerate(log_rows):
+        try:
+            trials.append(TrialResult.model_validate(row))
+        except Exception as exc:
+            logger.warning("Skipping malformed log row %d: %s", i, exc)
+
+    # --- 3. Assemble recommendation (works for 0 trials → no_signal) ------
     rs = RunState(
-        mission_id=mission.mission_id, current_iteration=len(trials),
-        terminated=True, terminated_reason="iteration_cap",
+        mission_id=mission.mission_id,
+        current_iteration=len(trials),
+        terminated=True,
+        terminated_reason="iteration_cap" if trials else "no_trials_run",
     )
     rec = fin_mod.assemble_recommendation(
         project_dir=p, mission=mission, run_state=rs, log=trials, judge_calibration=None,
     )
+
+    # --- 4. Write FINAL.md and pin winner ---------------------------------
     fin_path = fin_mod.write_final_md(p, rec, mission)
     pin_winning_variant(p, mission)
-    # Empty bundle as a placeholder for /contribute later.
+
+    # Empty knowledge bundle placeholder for /contribute.
+    (p / "results").mkdir(parents=True, exist_ok=True)
     (p / "results" / "knowledge_bundle.json").write_text(
         json.dumps({"prompt_patterns": [], "rag_recipes": [], "failure_modes": [],
                     "model_routes": [], "judge_templates": []}, indent=2),
         encoding="utf-8",
     )
+
+    msg = rec.decision_one_sentence
+    if not trials:
+        msg = ("No trials have been recorded yet. Click Start to run iterations first, "
+               "then Finalize. FINAL.md has been written with a 'no_signal' result.")
+
     return {
         "confidence": rec.confidence,
-        "decision": rec.decision_one_sentence,
+        "decision": msg,
         "path": str(fin_path.relative_to(framework_root())),
+        "n_trials": len(trials),
     }
 
 

@@ -104,22 +104,33 @@ function appendEvent(e) {
 
 async function finalize() {
     const result = document.getElementById('finalize-result');
-    result.innerHTML = '<div class="text-muted">Finalizing...</div>';
-    const res = await fetch('/projects/{{ name }}/run/finalize', { method: 'POST' });
-    const j = await res.json();
-    if (res.ok) {
-        result.innerHTML = `
-            <div class="alert alert-success">
-                <i class="bi bi-check-circle"></i>
-                <strong>Confidence: ${j.confidence}</strong><br>
-                ${j.decision}
-                <div class="mt-2">
-                    <a class="btn btn-sm btn-primary" href="/projects/{{ name }}/results">View FINAL.md →</a>
-                    <a class="btn btn-sm btn-outline-primary" href="/projects/{{ name }}/chat">Chat with winner →</a>
-                </div>
+    result.innerHTML = '<div class="text-muted"><span class="spinner-border spinner-border-sm"></span> Finalizing...</div>';
+    try {
+        const res = await fetch('/projects/{{ name }}/run/finalize', { method: 'POST' });
+        const j = await res.json();
+        if (res.ok) {
+            const isNoSignal = j.confidence === 'no_signal';
+            const alertCls = isNoSignal ? 'alert-warning' : 'alert-success';
+            const icon = isNoSignal ? 'bi-exclamation-triangle' : 'bi-check-circle';
+            result.innerHTML = `
+                <div class="alert ${alertCls}">
+                    <i class="bi ${icon}"></i>
+                    <strong>Confidence: ${j.confidence}</strong>
+                    ${j.n_trials !== undefined ? ` &nbsp;·&nbsp; ${j.n_trials} trial(s) recorded` : ''}
+                    <br>${j.decision}
+                    <div class="mt-2">
+                        <a class="btn btn-sm btn-primary" href="/projects/{{ name }}/results">View FINAL.md →</a>
+                        <a class="btn btn-sm btn-outline-primary" href="/projects/{{ name }}/chat">Chat with winner →</a>
+                    </div>
+                </div>`;
+        } else {
+            // j.detail is the "Finalize failed: <actual exception>" string.
+            result.innerHTML = `<div class="alert alert-danger">
+                <strong>Error</strong><br><code>${j.detail || 'Finalize failed — check Docker logs for the full traceback.'}</code>
             </div>`;
-    } else {
-        result.innerHTML = '<div class="alert alert-danger">' + (j.detail || 'Finalize failed') + '</div>';
+        }
+    } catch (err) {
+        result.innerHTML = `<div class="alert alert-danger">Network error: ${err}</div>`;
     }
 }
 </script>
