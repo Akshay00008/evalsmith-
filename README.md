@@ -463,7 +463,15 @@ genai list
 genai status <name>
 genai library <section> [--tag <t>]
    sections: prompt_patterns | failure_modes | rag_recipes | model_routes | judge_templates | all
+genai chat <name> [--trial <id>] [--no-transcript]
 genai replay <name>
+```
+
+**Companion ingestion tools** (called outside the CLI app):
+
+```
+python tools/ingest_pdfs.py --project projects/<name>           # PDFs  -> data/corpus.jsonl
+python tools/introspect_db.py --project projects/<name>         # DB schema -> data/schema.txt
 ```
 
 ---
@@ -495,6 +503,9 @@ evalsmith-/
 │   ├── agent_inbox.py              Per-iter JSON channel between subagents
 │   ├── registry.py                 Single chokepoint for LLM/embed/retrieve
 │   ├── variants.py                 Diff applier + normalized fingerprint
+│   ├── corpus.py                   Corpus loader + BM25/dense/hybrid retrievers (RAG)
+│   ├── db.py                       SQLAlchemy DB connector + safe SQL exec (NLQ)
+│   ├── chat.py                     Interactive REPL loaded from winning Variant
 │   └── cli.py                      `genai` CLI
 │
 ├── .claude/
@@ -532,9 +543,17 @@ evalsmith-/
 ├── tools/                          framework-level utilities
 │   ├── post_merge_extractor.py     anonymization gate
 │   ├── replay_runner.py            determinism verifier
+│   ├── ingest_pdfs.py              PDF -> data/corpus.jsonl (lazy-loads pypdf)
+│   ├── introspect_db.py            DB schema dump -> data/schema.txt
 │   └── audit_repo.py               CI sanity check
 │
-└── tests/                          16 tests covering schemas, bandit, auditor, e2e
+├── docs/                           hands-on guides (linked from Quick start)
+│   ├── WALKTHROUGH.md              step-by-step pipeline tour
+│   ├── PDF_RAG_GUIDE.md            ingest PDFs and tune RAG over them
+│   └── DATABASES_AND_CHAT.md       connect SQL/Oracle DBs for NLQ + chat REPL
+│
+└── tests/                          42 tests covering schemas, bandit, auditor,
+                                    corpus, DB safety + execution, end-to-end
 ```
 
 ---
@@ -597,12 +616,14 @@ If the eval set changes silently, the Auditor refuses. If a variant duplicates a
 python -m pytest tests/ -v
 ```
 
-16 tests covering:
-- Schema invariants (deterministic IDs, content-hash stability, mission validation)
-- Bandit posterior persistence + Thompson sampling determinism with seed
-- Doom-loop fingerprinting (paraphrase detection)
-- Auditor verdicts on the four critical shapes: clean / missing evidence / empty diff / **eval contamination → CATASTROPHIC**
-- End-to-end pipeline against the stub backend (no API key needed)
+42 tests covering:
+- **Schemas** — deterministic IDs, content-hash stability, mission validation
+- **Bandit** — posterior persistence + Thompson sampling determinism with seed
+- **Doom-loop** — fingerprint paraphrase detection
+- **Auditor** — clean / missing evidence / empty diff / **eval contamination → CATASTROPHIC**
+- **Corpus** — BM25 ranking + stemming, paragraph-aware chunking, stub fallback, registry routing
+- **DB** — SELECT-only guard, comment-leading SQL, DoS-construct blocks, schema introspection, max_rows cap, result-set comparison (full / partial / failed)
+- **End-to-end** — full pipeline against the stub backend (no API key needed)
 
 Plus a framework-level audit:
 
@@ -636,6 +657,18 @@ A. The single chokepoint is `lib/registry.py`. Add a `_backend()` branch and imp
 
 **Q. Can I plug in my own capability?**
 A. Yes — subclass `CapabilityBase`, decorate with `@register_capability("name")`, declare `primary_metrics` + `allowed_arms`, and implement `run_single_case`. Make sure every metric in `primary_metrics` exists in `lib/eval.py` or add it.
+
+**Q. How do I use this with my own PDFs?**
+A. See [docs/PDF_RAG_GUIDE.md](docs/PDF_RAG_GUIDE.md). Short version: `pip install pypdf`, drop PDFs in `<project>/data/raw_pdfs/`, run `python tools/ingest_pdfs.py --project projects/<name>`, write an eval set citing the resulting `doc_id`s, then `/init` / `/plan` / `/run` as normal.
+
+**Q. How do I connect a real database for NLQ?**
+A. See [docs/DATABASES_AND_CHAT.md](docs/DATABASES_AND_CHAT.md). Short version: `pip install 'sqlalchemy>=2.0'` + your DB driver, drop credentials into `<project>/data/db.json`, run `python tools/introspect_db.py --project projects/<name>` to dump the schema, pick `eval_strategy=execution_equivalence` in `/plan`. Works with SQLite, PostgreSQL, MySQL, Oracle, MSSQL. Read-only guard + SELECT-only + statement timeout enforced by `lib/db.py` regardless of what the LLM generates.
+
+**Q. How do I chat with the winning variant after optimization?**
+A. `genai chat <project_name>` opens an interactive REPL. Multi-turn for chatbot missions, retrieve-then-generate for RAG, generate-SQL-then-execute for NLQ. Transcripts auto-save to `<project>/results/chat_log_*.jsonl` — useful as eval-set growth fodder when you spot a wrong answer.
+
+**Q. I see a `data/db.json` warning about credentials. Is anything stored centrally?**
+A. No. `db.json` is per-project and gitignored by the project template. The framework never reads/writes credentials to MISSION.json or knowledge/. Use a read-only DB role even with the framework's safety guard for defense-in-depth.
 
 ---
 

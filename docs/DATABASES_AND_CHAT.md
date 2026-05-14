@@ -5,6 +5,10 @@ Two related additions:
 1. **Connect a real DB** (SQLite, PostgreSQL, MySQL, Oracle, MSSQL) for **NLQ missions** so the framework optimizes against *execution equivalence* — i.e. "does the generated SQL produce the right rows?" — not just string match.
 2. **Interactive chat REPL** (`genai chat`) so you can talk to a project's winning variant — chatbot, RAG, or NLQ — without going through the eval loop.
 
+> **Related guides**
+> - [WALKTHROUGH.md](WALKTHROUGH.md) — the general pipeline tour. Read first if you're new.
+> - [PDF_RAG_GUIDE.md](PDF_RAG_GUIDE.md) — if your input is PDFs (RAG missions) instead of a database.
+
 ---
 
 ## Part 1 — Connecting a database (NLQ)

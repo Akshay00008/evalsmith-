@@ -2,6 +2,10 @@
 
 How to point evalsmith at a folder of PDFs and have it optimize a RAG pipeline over them.
 
+> **Related guides**
+> - [WALKTHROUGH.md](WALKTHROUGH.md) — the general pipeline tour. Read first if you're new.
+> - [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md) — if your input is a database instead of PDFs (NLQ missions), or you want the `genai chat` REPL deep-dive.
+
 PDFs play one of two roles in a project:
 
 | Role         | What it means                                                  | Capability                  |
@@ -66,9 +70,10 @@ The `relevant_doc_ids` field in each eval case is what drives the **recall@k** m
    /plan my_pdfs
    /run my_pdfs
 8. # Read projects/my_pdfs/results/FINAL.md
+9. genai chat my_pdfs                               # talk to the winning variant
 ```
 
-Sections 3–7 walk each step in detail.
+Sections 3–7 walk each step in detail. Section 7 (Step 6) covers the chat REPL.
 
 ---
 
@@ -225,6 +230,26 @@ During `/run`, the Strategist proposes things like:
 ```
 
 When it terminates, `projects/my_pdfs/results/FINAL.md` will name the winning configuration. The recommended variant's `retrieval` block is the RAG config you ship to production.
+
+### Step 6 — Chat with the winning variant
+
+Before shipping, talk to it:
+
+```bash
+genai chat my_pdfs
+```
+
+For RAG missions, each turn retrieves top-k chunks from `data/corpus.jsonl`, builds the prompt, and generates an answer — exactly what the deployed system would do. Citations are shown:
+
+```
+you> Can I refund a digital product purchased last week?
+
+bot> Digital products are non-refundable except within 24 hours of accidental
+     purchase. [b3c9f1d27e604a18]
+   (retrieved: b3c9f1d2, a4f8e92b, c5e1a04f · 487+34 tok · $0.0008)
+```
+
+This is also how you grow the eval set: any chat answer that looks wrong is a question + correct answer pair waiting to be added to `data/eval_set.jsonl`. See [DATABASES_AND_CHAT.md § 2.7](DATABASES_AND_CHAT.md#27-using-chat-to-grow-your-eval-set) for the workflow loop.
 
 ---
 

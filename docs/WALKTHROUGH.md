@@ -27,10 +27,16 @@ We'll cover **Path A** in depth (it's the real UX) and **Path B** as a sanity ch
    - [5.5 /status while running](#55-status-while-running)
    - [5.6 Read FINAL.md](#56-read-finalmd)
    - [5.7 /contribute — share knowledge](#57-contribute--share-knowledge)
-8. [Path B — Python orchestration (no Claude Code)](#6-path-b--python-orchestration-no-claude-code)
+   - [5.8 Chat with the winning variant](#58-chat-with-the-winning-variant)
+6. [Path B — Python orchestration (no Claude Code)](#6-path-b--python-orchestration-no-claude-code)
 7. [Worked example: tiny RAG QA project](#7-worked-example-tiny-rag-qa-project)
 8. [What gets written where](#8-what-gets-written-where)
 9. [Troubleshooting](#9-troubleshooting)
+10. [Where next](#10-where-next)
+
+> **Related guides**
+> - [PDF_RAG_GUIDE.md](PDF_RAG_GUIDE.md) — bring your own PDFs as the RAG corpus.
+> - [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md) — connect SQL/Oracle DBs for NLQ + chat REPL deep-dive.
 
 ---
 
@@ -397,6 +403,48 @@ The next project you `/init` will automatically pull these snippets via the `ret
 
 ---
 
+### 5.8 Chat with the winning variant
+
+Before shipping the recommended variant, you usually want to *talk to it*. The CLI exposes an interactive REPL that loads the winner directly:
+
+```bash
+genai chat demo_rag
+```
+
+Expected:
+
+```
+======================================================================
+evalsmith chat · mission a4f8e92b1c5d7e90 (rag_qa)
+variant 7a3f9c2d18b06e14 · model claude-haiku-4-5
+Type /help for commands · /exit to quit
+======================================================================
+
+you> what's the refund window?
+
+bot> Refunds are processed within 30 days of purchase. [doc_42]
+   (retrieved: a4f8e92b, b3c9f1d2, c5e1a04f · 124+38 tok · $0.0003)
+```
+
+Behavior dispatches on mission modality:
+
+- **chatbot** → multi-turn conversation, full context carried. `/reset` clears memory.
+- **rag_qa** → each turn retrieves top-k from `data/corpus.jsonl` then generates. Citations shown.
+- **nlq_to_query** → generates SQL; if `data/db.json` exists, executes safely and renders the result table.
+- **other capabilities** → single-turn `model_call`.
+
+Useful built-ins:
+- `/help` — show all commands
+- `/variant` — dump the active variant's prompt/model/retrieval config
+- `/reset` — clear conversation buffer (chatbot only)
+- `/exit` — quit; transcript auto-saved to `results/chat_log_<ts>.jsonl`
+
+The auto-saved transcripts are designed to be your eval-set growth fodder — when you notice a bad answer in chat, copy the question + correct answer into `data/eval_set.jsonl` and re-`/run`.
+
+For the full chat REPL reference and the NLQ-with-real-DB worked example, see [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md).
+
+---
+
 ## 6. Path B — Python orchestration (no Claude Code)
 
 For smoke-testing the pipeline without Claude Code. The same as what `tests/test_end_to_end_stub.py` does, but standalone.
@@ -566,13 +614,16 @@ Map of every artifact, by lifecycle stage:
 | Stage         | File(s) created                                        | Source                          |
 |---------------|--------------------------------------------------------|---------------------------------|
 | `new-project` | `PROJECT.json`, `data/eval_set.example.jsonl`, `.gitignore`, optional `recipe.json` | CLI templates       |
+| **You** (optional, RAG) | `data/raw_pdfs/*.pdf` (your PDFs); after running `tools/ingest_pdfs.py`: `data/corpus.jsonl` | [PDF_RAG_GUIDE.md](PDF_RAG_GUIDE.md) |
+| **You** (optional, NLQ) | `data/db.json` (DB connection — credentials, gitignored); after `tools/introspect_db.py`: `data/schema.txt` | [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md) |
 | `/init`       | `INIT_PROFILE.json`, `experiment_log.jsonl` (baseline), `budget.jsonl` (baseline cost), `sketch/manifest.json`, `sketch/e1_profile.json`, `sketch/e2-e7.jsonl` (empty)  | `/init` slash command + `lib/sketch/builder.py` |
 | `/plan`       | `MISSION.json`, `memory/HYPOTHESES.jsonl`              | Architect subagent              |
 | `/run` (each iter) | `memory/agent_inbox/iter_NNNN/*.json` (Strategist proposal, Sentinel verdict, Auditor verdict, Operator trial id) | Subagents              |
 | `/run` (after each trial) | Row appended to `experiment_log.jsonl` + `budget.jsonl` + `sketch/e3_slices.jsonl` + (sometimes) `e2`, `e4`, `e5`, `e7` rows | `lib/run.py` |
 | `/run` (every 5) | `results/synthesis_NNNN.md`, `memory/agent_inbox/iter_NNNN/inspector_directives.json`, E7 safety rows | Inspector + Provoker |
 | `/run` (state) | `RUN_STATE.json` atomically rewritten after each iter; `memory/BANDIT.json`, `memory/RECENT_PLANS.jsonl` | `lib/state.py`, `lib/bandit.py`, `lib/doom_loop.py` |
-| termination   | `results/FINAL.md`, `results/knowledge_bundle.json`    | Curator subagent → `lib/finalize.py` |
+| termination   | `results/FINAL.md`, `results/knowledge_bundle.json`, `results/winning_variant.json` | Curator subagent → `lib/finalize.py` |
+| `genai chat`  | `results/chat_log_<unix_ts>.jsonl` (one per session)   | `lib/chat.py`                   |
 | `/contribute` | Appended rows in `knowledge/*.jsonl`; `<project>/CONTRIBUTION.md` | `tools/post_merge_extractor.py` |
 
 ---
@@ -603,14 +654,32 @@ Make sure pip is recent: `pip install --upgrade pip setuptools`. The project use
 ### Tests fail with `TypeError: unsupported operand type(s) for |`
 You're on Python 3.9 with a pydantic that needs `eval_type_backport`. We already use `Optional[X]` instead of `X | None` — if you see this, you may have edited a schema file and reintroduced `|`. Revert to `Optional[...]` from `typing`.
 
+### `genai chat` says "Using seed variant" — but I just ran /run
+The Curator pins `results/winning_variant.json` after termination on current builds. Older runs (pre-DB-and-chat commit) didn't have this artifact. Fix: re-run `/run`, or pass `--trial <id>` explicitly. The REPL still works — it just falls back to the domain seed variant which won't match what the optimizer actually chose.
+
+### RAG: chunks are retrieved but the model says "no relevant information"
+The prompt template may not include `{context}`. Check `MISSION.json` → look at the winning variant's `prompt.user_template`. The Strategist usually adds `{context}` automatically when retrieval is enabled, but if you hand-rolled a project this is easy to miss.
+
+### NLQ: every trial returns `error_kind: forbidden`
+The model is emitting INSERT/UPDATE/DELETE/DDL — the read-only guard is doing its job. Adjust the system prompt to be more forceful about read-only output, or set `"read_only": false` in `data/db.json` if (and only if) you're deliberately evaluating write queries.
+
+### NLQ: `query exceeded 5000ms`
+Generated query is doing a cartesian join, or your eval DB is large. Bump `query_timeout_ms` in `data/db.json`, OR (better) flag the case for review — most NLQ on a small eval DB should be sub-second.
+
+### Chat REPL hangs after typing a message
+You don't have an API key set, but the REPL is trying to call a real backend that pauses on network. Set `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`, or accept that stub mode produces synthetic answers. Stub mode is intentional for first-time exploration.
+
 ---
 
-## What next?
+## 10. Where next
 
-- Real eval set (100-500 cases) instead of the 20-case demo
-- Real API key — the autonomous loop is *much* more interesting on real LLMs than stubs
-- Add your own capability — subclass `CapabilityBase`, decorate with `@register_capability("name")`, declare metrics + allowed arms
-- Add a custom domain — create `lib/domains/<name>.py` with a `DomainProfile` instance + priors
-- Custom red-team patterns — extend `lib/redteam.BUILTIN_PATTERNS` or drop a JSONL at `<project>/data/redteam_patterns.jsonl`
+After this walkthrough, the natural follow-ups are:
+
+- **Bring your own corpus.** PDFs are the most common case — see [PDF_RAG_GUIDE.md](PDF_RAG_GUIDE.md) for ingestion + chunking + how to write eval cases that cite real chunks.
+- **Connect a real database.** For NLQ missions evaluating against execution equivalence — see [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md). Supports SQLite, PostgreSQL, MySQL, Oracle, MSSQL.
+- **Talk to the winning variant.** `genai chat <project>` opens an interactive REPL — useful as a sanity check before deployment and as eval-set growth fodder (transcripts auto-save).
+- **Grow your eval set.** The 20-case demo is the floor; real-world quality comes with 100–500 cases. Tag every case (`["multi_hop", "edge", "should_refuse", ...]`) so the sketch's slice performance layer can surface regressions on under-covered patterns.
+- **Use real API keys.** The autonomous loop is *much* more interesting on real LLMs than stubs. The framework drives the same flow either way; only the call cost differs.
+- **Extend the framework.** Subclass `CapabilityBase` for a new modality, add `lib/domains/<name>.py` for a domain-prior bundle, or extend `lib/redteam.BUILTIN_PATTERNS` for capability-specific red-team prompts.
 
 For deeper architecture detail, see [README.md](../README.md).
