@@ -31,6 +31,14 @@ embed = ["sentence-transformers>=2.7"]
 # rank-bm25 as a faster alternative to our built-in pure-Python BM25.
 # chromadb is optional — only needed if you wire up a real vector DB.
 rag = ["pypdf>=4.0", "rank-bm25>=0.2", "chromadb>=0.4"]
+# `db` extras: SQLAlchemy as the universal DB abstraction (NLQ missions
+# with execution_equivalence). Driver packages are listed per-DB; you'll
+# install only the one(s) you actually need.
+db = ["sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1"]
+# Oracle and MSSQL drivers omitted from the default `db` extra because
+# they depend on system-installed client libraries. Install separately:
+#   pip install oracledb     (Oracle)
+#   pip install pyodbc       (MSSQL, also needs ODBC Driver 18)
 test = ["pytest>=7.4"]
 
 [project.scripts]

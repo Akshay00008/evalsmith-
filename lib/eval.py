@@ -217,9 +217,67 @@ def _judge_score(outputs: list[RunOutput], es: EvalSet, *, judge_reports: list =
     return [by_id[o.case_id].score for o in outputs if o.case_id in by_id]
 
 
-# Aliases used by capabilities — convenient at the cost of mild duplication.
+# Aliases / specialized metrics --------------------------------------------
+
 @register_metric("execution_equivalence")
-def _exec_equiv(outputs, es): return _exact_match(outputs, es)
+def _exec_equiv(outputs: list[RunOutput], es: EvalSet) -> list[float]:
+    """Real execution-equivalence: compare result sets when the NLQ
+    capability has populated `tool_calls[0]` with the executed query
+    result. Falls back to string exact-match when no exec payload is
+    present (e.g. project has no DB configured).
+
+    Score:
+      1.0 — actual result set matches expected result set (rows + cols)
+      0.5 — rows match but column labels differ
+      0.0 — different rows, query failed, or no exec data + no gold SQL match
+    """
+    by_id = {c.case_id: c for c in es.cases}
+    out: list[float] = []
+    for o in outputs:
+        case = by_id.get(o.case_id)
+        if case is None:
+            continue
+        exec_payload = (o.tool_calls or [None])[0]
+        # If we don't have an exec result, fall back to string match.
+        if not exec_payload:
+            expected_sql = case.expected
+            if expected_sql is None:
+                continue
+            actual_sql = str(o.raw_output or "").lower().strip()
+            out.append(1.0 if actual_sql == str(expected_sql).lower().strip() else 0.0)
+            continue
+        # We have a real exec result. Compare against the gold result set.
+        # The gold can be supplied either as a SQL string (we execute it
+        # now) or as a pre-computed expected payload {columns, rows}.
+        gold = case.expected
+        if isinstance(gold, dict) and "rows" in gold:
+            # Caller provided the expected result set directly — no DB
+            # execution needed. Useful when you have an immutable gold set.
+            score = _compare_payloads(exec_payload, gold)
+        else:
+            # Gold is a SQL string. We'd need DB config + project_dir here
+            # to execute it; the metric layer doesn't have those, so the
+            # NLQ capability is the right place to pre-execute golds. For
+            # now we degrade gracefully to string match on the SQL.
+            actual_sql = str(o.raw_output or "").lower().strip()
+            expected_sql = str(gold or "").lower().strip()
+            score = 1.0 if actual_sql == expected_sql else 0.0
+        out.append(score)
+    return out
+
+
+def _compare_payloads(actual: dict, expected: dict) -> float:
+    """Same scoring rubric as lib.db.compare_result_sets but operating on
+    the JSON-serializable payloads carried via tool_calls."""
+    if not actual.get("ok"):
+        return 0.0
+    a_rows = sorted(tuple("" if v is None else str(v) for v in row) for row in actual.get("rows", []))
+    e_rows = sorted(tuple("" if v is None else str(v) for v in row) for row in expected.get("rows", []))
+    if a_rows != e_rows:
+        return 0.0
+    a_cols = [c.lower() for c in actual.get("columns", [])]
+    e_cols = [c.lower() for c in expected.get("columns", [])]
+    return 1.0 if a_cols == e_cols else 0.5
 
 
 @register_metric("syntactic_validity")

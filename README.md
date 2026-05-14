@@ -388,6 +388,7 @@ The arrow from LOG back to RUN is the loop — every iteration reads the prior l
 > **Hands-on guides:**
 > - **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md`.
 > - **[docs/PDF_RAG_GUIDE.md](docs/PDF_RAG_GUIDE.md)** — how to point evalsmith at a folder of PDFs and tune a RAG pipeline over them.
+> - **[docs/DATABASES_AND_CHAT.md](docs/DATABASES_AND_CHAT.md)** — connect SQLite/PostgreSQL/MySQL/Oracle/MSSQL for NLQ with execution-equivalence eval, plus the `genai chat` interactive REPL.
 
 ### Prerequisites
 

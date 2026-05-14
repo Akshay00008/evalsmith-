@@ -4,9 +4,22 @@
 
 results/iter_*/
 results/synthesis_*.md
+results/chat_log_*.jsonl
 memory/agent_inbox/
 sketch/e*.jsonl
 sketch/e*.json
+
+# Per-project raw + corpus data (large; not framework-relevant)
 data/corpus/
+data/corpus.jsonl
 data/raw/
+data/raw_pdfs/
+data/schema.txt
+
+# DB connection settings — contain credentials, NEVER commit
+data/db.json
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+
 *.tmp

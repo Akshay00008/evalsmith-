@@ -194,6 +194,36 @@ def library(
 
 
 # ---------------------------------------------------------------------------
+# chat — interactive REPL against a project's winning variant
+# ---------------------------------------------------------------------------
+
+@app.command("chat")
+def chat(
+    name: str = typer.Argument(..., help="Project name."),
+    trial_id: Optional[str] = typer.Option(None, "--trial", help="Specific trial_id to load; default = best in log."),
+    no_transcript: bool = typer.Option(False, "--no-transcript", help="Skip saving chat_log_*.jsonl."),
+):
+    """Open an interactive chat against the project's winning Variant.
+
+    Behavior varies by mission modality:
+      * chatbot   → multi-turn conversation with conversation memory
+      * rag_qa    → each turn retrieves + generates (no carried memory)
+      * nlq       → generates SQL, executes if data/db.json exists, prints table
+      * other     → single-turn model_call
+
+    Pre-conditions: MISSION.json must exist. If experiment_log.jsonl is
+    empty (no /run yet) we use the domain seed variant — useful for
+    smoke-testing the prompt before launching a full /run.
+    """
+    target = _projects_dir() / name
+    if not target.exists():
+        console.print(f"[red]Project {name!r} not found.[/red]")
+        raise typer.Exit(1)
+    from . import chat as chat_mod
+    chat_mod.run_repl(target, trial_id=trial_id, save_transcript=not no_transcript)
+
+
+# ---------------------------------------------------------------------------
 # replay
 # ---------------------------------------------------------------------------
 
