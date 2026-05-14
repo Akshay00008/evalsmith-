@@ -122,6 +122,123 @@ with tab_eval:
             eval_path.unlink()
             st.rerun()
 
+    # ====== Auto-generate eval set ======
+    # An LLM reads the corpus or DB schema and writes Q&A pairs. The user
+    # reviews the preview before committing to data/eval_set.jsonl.
+    st.divider()
+    st.markdown("### 🪄 Or auto-generate an eval set")
+    st.markdown(
+        "Don't have test questions yet? Let an LLM generate them from your data. "
+        "**Review carefully** before optimizing — generated eval sets are a starting point, "
+        "not a final eval set."
+    )
+
+    gen_col1, gen_col2 = st.columns(2)
+
+    # --- From PDFs ---
+    with gen_col1:
+        st.markdown("**📄 From PDFs (RAG)**")
+        corpus_path = data_dir / "corpus.jsonl"
+        n_chunks = (
+            sum(1 for line in corpus_path.read_text(encoding="utf-8").splitlines() if line.strip())
+            if corpus_path.exists() else 0
+        )
+        st.caption(f"{n_chunks} chunks currently indexed.")
+        gen_n = st.number_input("Cases to generate", min_value=5, max_value=100, value=20, step=5, key="gen_corpus_n")
+        gen_model = st.selectbox(
+            "Model", ["claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-7"],
+            key="gen_corpus_model",
+        )
+        if st.button("🪄 Generate from PDFs", disabled=(n_chunks == 0)):
+            with st.spinner("Sampling chunks + calling LLM..."):
+                import sys
+                sys.path.insert(0, str(project_dir.parent.parent))
+                from lib import eval_gen
+                result = eval_gen.generate_from_corpus(project_dir, n_cases=int(gen_n), model=gen_model)
+            st.session_state["gen_result"] = {
+                "cases": [c.model_dump() for c in result.cases],
+                "n_parsed": result.n_parsed,
+                "n_attempted": result.n_attempted,
+                "cost_usd": result.cost_usd,
+                "warnings": result.warnings,
+                "model": result.model,
+            }
+            st.rerun()
+
+    # --- From DB ---
+    with gen_col2:
+        st.markdown("**🗄 From database (NLQ)**")
+        schema_path = data_dir / "schema.txt"
+        st.caption(
+            "Schema introspected." if schema_path.exists()
+            else "No schema yet — configure DB on the Database tab first."
+        )
+        gen_db_n = st.number_input("Cases to generate ", min_value=5, max_value=100, value=20, step=5, key="gen_db_n")
+        gen_db_model = st.selectbox(
+            "Model ", ["claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-7"],
+            key="gen_db_model",
+        )
+        if st.button("🪄 Generate from DB", disabled=(not schema_path.exists())):
+            with st.spinner("Reading schema + calling LLM..."):
+                import sys
+                sys.path.insert(0, str(project_dir.parent.parent))
+                from lib import eval_gen
+                result = eval_gen.generate_from_db(project_dir, n_cases=int(gen_db_n), model=gen_db_model)
+            st.session_state["gen_result"] = {
+                "cases": [c.model_dump() for c in result.cases],
+                "n_parsed": result.n_parsed,
+                "n_attempted": result.n_attempted,
+                "cost_usd": result.cost_usd,
+                "warnings": result.warnings,
+                "model": result.model,
+            }
+            st.rerun()
+
+    # --- Preview + save controls (shown after generation completes) ---
+    if "gen_result" in st.session_state:
+        gr = st.session_state["gen_result"]
+        if gr["cases"]:
+            st.success(
+                f"Generated **{len(gr['cases'])}** cases  ·  "
+                f"model `{gr['model']}`  ·  cost ${gr['cost_usd']:.4f}  ·  "
+                f"parsed {gr['n_parsed']}/{gr['n_attempted']}"
+            )
+            if gr.get("warnings"):
+                with st.expander(f"{len(gr['warnings'])} warning(s)"):
+                    for w in gr["warnings"]:
+                        st.caption(f"- {w}")
+
+            import pandas as _pd
+            preview_df = _pd.DataFrame(gr["cases"])[["case_id", "input", "expected", "tags"]]
+            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+
+            save_col1, save_col2, save_col3 = st.columns(3)
+            if save_col1.button("💾 Save as eval set", type="primary"):
+                from lib.schemas import EvalCase
+                import sys
+                sys.path.insert(0, str(project_dir.parent.parent))
+                from lib import eval_gen
+                cases_typed = [EvalCase.model_validate(c) for c in gr["cases"]]
+                n = eval_gen.write_eval_set(project_dir, cases_typed, append=False)
+                st.success(f"Saved {n} cases.")
+                del st.session_state["gen_result"]
+                st.rerun()
+            if save_col2.button("➕ Append to existing"):
+                from lib.schemas import EvalCase
+                import sys
+                sys.path.insert(0, str(project_dir.parent.parent))
+                from lib import eval_gen
+                cases_typed = [EvalCase.model_validate(c) for c in gr["cases"]]
+                n = eval_gen.write_eval_set(project_dir, cases_typed, append=True)
+                st.success(f"Appended {n} cases.")
+                del st.session_state["gen_result"]
+                st.rerun()
+            if save_col3.button("🗑 Discard"):
+                del st.session_state["gen_result"]
+                st.rerun()
+        else:
+            st.warning("No cases were generated. Check the warnings above.")
+
 
 # ---------------------------------------------------------------------------
 # Tab 2: PDF upload + ingestion

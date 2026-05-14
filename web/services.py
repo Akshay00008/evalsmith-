@@ -256,6 +256,54 @@ def count_corpus_chunks(name: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Auto-generated eval sets (LLM-driven, from corpus or DB)
+# ---------------------------------------------------------------------------
+
+def generate_eval_from_corpus(name: str, *, n_cases: int = 20, model: str = "claude-haiku-4-5") -> dict:
+    """LLM-generate questions+answers from the project's PDF corpus.
+    Returns a dict suitable for the UI to render previews. Does NOT save
+    to disk — caller saves explicitly after user review."""
+    import sys
+    sys.path.insert(0, str(framework_root()))
+    from lib import eval_gen
+    result = eval_gen.generate_from_corpus(project_dir(name), n_cases=n_cases, model=model)
+    return _gen_result_to_dict(result)
+
+
+def generate_eval_from_db(name: str, *, n_cases: int = 20, model: str = "claude-sonnet-4-6") -> dict:
+    """LLM-generate NL → SQL pairs from the project's DB schema + sample rows."""
+    import sys
+    sys.path.insert(0, str(framework_root()))
+    from lib import eval_gen
+    result = eval_gen.generate_from_db(project_dir(name), n_cases=n_cases, model=model)
+    return _gen_result_to_dict(result)
+
+
+def save_generated_eval(name: str, cases: list[dict], *, append: bool = False) -> int:
+    """Persist user-reviewed generated cases. Accepts plain dicts so the
+    UI doesn't need to round-trip through EvalCase."""
+    import sys
+    sys.path.insert(0, str(framework_root()))
+    from lib import eval_gen
+    from lib.schemas import EvalCase
+    typed = [EvalCase.model_validate(c) for c in cases]
+    return eval_gen.write_eval_set(project_dir(name), typed, append=append)
+
+
+def _gen_result_to_dict(result) -> dict:
+    """Flatten a GenerationResult to JSON-serializable shape for the UI."""
+    return {
+        "cases": [c.model_dump(mode="json") for c in result.cases],
+        "n_attempted": result.n_attempted,
+        "n_parsed": result.n_parsed,
+        "cost_usd": result.cost_usd,
+        "latency_ms": result.latency_ms,
+        "model": result.model,
+        "warnings": result.warnings,
+    }
+
+
+# ---------------------------------------------------------------------------
 # DB connection
 # ---------------------------------------------------------------------------
 

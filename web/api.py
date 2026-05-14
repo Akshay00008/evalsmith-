@@ -209,6 +209,52 @@ async def ingest(
     return JSONResponse({"chunks": n, "message": f"Ingested {n} chunks."})
 
 
+# --- Auto-generate eval set from corpus or DB --------------------------
+# Two generators: one samples from data/corpus.jsonl, the other reads
+# the introspected schema. Both return the generated cases as JSON so
+# the UI can preview them before the user clicks Save. We deliberately
+# don't auto-save — generated eval sets are a starting point, not a
+# final eval set; users should at least skim before committing.
+
+@app.post("/projects/{name}/upload/generate_from_corpus")
+async def generate_from_corpus_route(
+    name: str,
+    n_cases: int = Form(20),
+    model: str = Form("claude-haiku-4-5"),
+):
+    """Sample N chunks from data/corpus.jsonl; LLM writes a Q+A per chunk."""
+    try:
+        return JSONResponse(services.generate_eval_from_corpus(name, n_cases=n_cases, model=model))
+    except Exception as e:
+        raise HTTPException(500, f"Generation failed: {e}")
+
+
+@app.post("/projects/{name}/upload/generate_from_db")
+async def generate_from_db_route(
+    name: str,
+    n_cases: int = Form(20),
+    model: str = Form("claude-sonnet-4-6"),
+):
+    """Use the project's schema + sample rows; LLM writes NL→SQL pairs."""
+    try:
+        return JSONResponse(services.generate_eval_from_db(name, n_cases=n_cases, model=model))
+    except Exception as e:
+        raise HTTPException(500, f"Generation failed: {e}")
+
+
+@app.post("/projects/{name}/upload/save_generated")
+async def save_generated_route(name: str, request: Request):
+    """Save generated cases the user has reviewed. Body is JSON:
+       {"cases": [...], "append": false}
+    """
+    try:
+        body = await request.json()
+        n = services.save_generated_eval(name, body.get("cases", []), append=bool(body.get("append", False)))
+    except Exception as e:
+        raise HTTPException(500, f"Save failed: {e}")
+    return JSONResponse({"saved": n, "message": f"Saved {n} cases."})
+
+
 @app.post("/projects/{name}/upload/db")
 async def save_db(
     name: str,
