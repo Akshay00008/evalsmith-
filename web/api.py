@@ -59,12 +59,21 @@ app.mount("/static", StaticFiles(directory=str(_WEB_DIR / "static")), name="stat
 templates = Jinja2Templates(directory=str(_WEB_DIR / "templates"))
 
 
-# Inject a couple of helpers into every template's globals so we don't
-# have to pass them as kwargs everywhere.
-@app.middleware("http")
-async def add_globals(request: Request, call_next):
-    response = await call_next(request)
-    return response
+# Modern Starlette / FastAPI (>=0.46) requires `request` as the first
+# positional arg to TemplateResponse. We use the new signature everywhere
+# to stay compatible with current pip-installed versions. (The old
+# `TemplateResponse(name, {"request": request, ...})` form is removed
+# from Starlette 0.46+ and triggers an "unhashable dict" TypeError.)
+
+
+# Browsers always request /favicon.ico. Return 204 to silence the 404
+# noise in logs without shipping a real icon.
+from fastapi.responses import Response
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon() -> Response:
+    return Response(status_code=204)
 
 
 # ---------------------------------------------------------------------------
@@ -74,8 +83,7 @@ async def add_globals(request: Request, call_next):
 @app.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request):
     projects = services.list_projects()
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "dashboard.html", {
         "projects": projects,
         "page_title": "Dashboard",
     })
@@ -99,9 +107,7 @@ DOMAIN_OPTIONS = ["general", "support_bot", "code_assistant", "search_qa", "extr
 
 @app.get("/projects/new", response_class=HTMLResponse)
 async def new_project_form(request: Request):
-    return templates.TemplateResponse("new_project.html", {
-        "request": request,
-        "modality_options": MODALITY_OPTIONS,
+    return templates.TemplateResponse(request, "new_project.html", {        "modality_options": MODALITY_OPTIONS,
         "domain_options": DOMAIN_OPTIONS,
         "page_title": "New project",
     })
@@ -118,9 +124,7 @@ async def new_project_submit(
         services.create_project(name, recipe=recipe, domain_hint=domain)
     except (ValueError, RuntimeError) as e:
         # Render the form again with the error message.
-        return templates.TemplateResponse("new_project.html", {
-            "request": request,
-            "modality_options": MODALITY_OPTIONS,
+        return templates.TemplateResponse(request, "new_project.html", {            "modality_options": MODALITY_OPTIONS,
             "domain_options": DOMAIN_OPTIONS,
             "error": str(e),
             "form_name": name,
@@ -145,9 +149,7 @@ async def project_home(request: Request, name: str):
     n_chunks = services.count_corpus_chunks(name)
     n_trials = len(services.read_log(name))
     has_final = services.read_final_md(name) is not None
-    return templates.TemplateResponse("project_home.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "project_home.html", {        "name": name,
         "mission": mission,
         "n_eval": n_eval,
         "n_pdfs": n_pdfs,
@@ -166,9 +168,7 @@ async def project_home(request: Request, name: str):
 async def upload_form(request: Request, name: str):
     if not services.project_dir(name).exists():
         raise HTTPException(404)
-    return templates.TemplateResponse("upload.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "upload.html", {        "name": name,
         "n_eval": services.eval_set_size(name),
         "n_pdfs": services.count_pdfs(name),
         "n_chunks": services.count_corpus_chunks(name),
@@ -274,9 +274,7 @@ async def mission_form(request: Request, name: str):
     recipe_strategy = recipe.get("composition", {}).get("eval_strategy", "judge_llm")
     crit = (recipe.get("success_criteria") or [{}])[0]
 
-    return templates.TemplateResponse("mission.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "mission.html", {        "name": name,
         "existing": existing,
         "n_eval": services.eval_set_size(name),
         "metric_options": METRIC_OPTIONS,
@@ -327,9 +325,7 @@ async def run_page(request: Request, name: str):
         raise HTTPException(400, "Mission not locked yet.")
     log = services.read_log(name)
     spent = sum(t.get("total_cost_usd", 0) for t in log)
-    return templates.TemplateResponse("run.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "run.html", {        "name": name,
         "mission": mission,
         "n_trials": len(log),
         "spent": spent,
@@ -406,9 +402,7 @@ async def results_page(request: Request, name: str):
                 "value": metrics[0].get("value", 0),
                 "cost": t.get("total_cost_usd", 0),
             })
-    return templates.TemplateResponse("results.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "results.html", {        "name": name,
         "final_md": md,
         "chart_rows": json.dumps(chart_rows),
         "n_trials": len(log),
@@ -431,18 +425,18 @@ async def chat_page(request: Request, name: str):
     if not services.read_mission_dict(name):
         raise HTTPException(400, "Mission not locked yet.")
     msgs = _CHAT_BUFFERS.get(name, [])
-    return templates.TemplateResponse("chat.html", {
-        "request": request,
-        "name": name,
+    return templates.TemplateResponse(request, "chat.html", {        "name": name,
         "messages": msgs,
         "page_title": f"{name} · Chat",
     })
 
 
 @app.post("/projects/{name}/chat")
-async def chat_send(name: str, message: str = Form(...)):
+async def chat_send(request: Request, name: str, message: str = Form(...)):
     """Process one user message; return the assistant reply as HTML
-    fragments so HTMX can append them to the chat window."""
+    fragments so HTMX can append them to the chat window. Note that
+    `request` is required by the new TemplateResponse signature even
+    when the template itself doesn't use it."""
     sys.path.insert(0, str(_PROJECT_ROOT))
     from lib import chat as chat_mod, registry as model_registry
 
@@ -516,8 +510,7 @@ async def chat_send(name: str, message: str = Form(...)):
     buf.append({"role": "assistant", "content": response_text, "diag": diag})
 
     # Return both messages as HTML fragments — HTMX appends them.
-    return templates.TemplateResponse("chat_fragment.html", {
-        "request": None,
+    return templates.TemplateResponse(request, "chat_fragment.html", {
         "user_msg": message,
         "assistant_msg": response_text,
         "diag": diag,
