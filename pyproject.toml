@@ -39,6 +39,10 @@ db = ["sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1"]
 # they depend on system-installed client libraries. Install separately:
 #   pip install oracledb     (Oracle)
 #   pip install pyodbc       (MSSQL, also needs ODBC Driver 18)
+#
+# `ui` extra: Streamlit-based web UI for non-technical users
+# (PMs / BAs / analysts). Run with `streamlit run webui/app.py`.
+ui = ["streamlit>=1.30", "pandas>=2.0"]
 test = ["pytest>=7.4"]
 
 [project.scripts]

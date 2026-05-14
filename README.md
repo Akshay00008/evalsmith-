@@ -386,7 +386,8 @@ The arrow from LOG back to RUN is the loop — every iteration reads the prior l
 ## Quick start
 
 > **Hands-on guides:**
-> - **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md`.
+> - **[docs/NONTECH_GUIDE.md](docs/NONTECH_GUIDE.md)** — no-code, button-and-form walkthrough for PMs / BAs / non-developers using the web UI. Start here if you don't want to use the CLI or Claude Code.
+> - **[docs/WALKTHROUGH.md](docs/WALKTHROUGH.md)** — step-by-step from `pip install` to reading `FINAL.md` (CLI + Claude Code path).
 > - **[docs/PDF_RAG_GUIDE.md](docs/PDF_RAG_GUIDE.md)** — how to point evalsmith at a folder of PDFs and tune a RAG pipeline over them.
 > - **[docs/DATABASES_AND_CHAT.md](docs/DATABASES_AND_CHAT.md)** — connect SQLite/PostgreSQL/MySQL/Oracle/MSSQL for NLQ with execution-equivalence eval, plus the `genai chat` interactive REPL.
 
@@ -437,6 +438,18 @@ genai status my_first       # one-screen summary
 genai library prompt_patterns --tag rag_qa
 genai replay my_first       # verify determinism
 ```
+
+### No-code web UI
+
+For non-developers (PMs, BAs, SMEs) there's a Streamlit-based UI with 7 screens (Dashboard → New Project → Upload Data → Mission → Run → Results → Chat). Drives the headless optimizer instead of the Claude-Code subagent loop, so it works without Claude Code:
+
+```bash
+pip install -e ".[ui]"
+streamlit run webui/app.py
+# Open http://localhost:8501
+```
+
+Full walkthrough: [docs/NONTECH_GUIDE.md](docs/NONTECH_GUIDE.md).
 
 ---
 
@@ -547,8 +560,15 @@ evalsmith-/
 │   ├── introspect_db.py            DB schema dump -> data/schema.txt
 │   └── audit_repo.py               CI sanity check
 │
+├── webui/                          Streamlit-based no-code UI for non-developers
+│   ├── app.py                      `streamlit run webui/app.py`
+│   ├── headless_optimizer.py       template-based Strategist (no Claude Code needed)
+│   ├── lib_glue.py                 bridges Streamlit pages to lib/*
+│   └── pages/                      7 screens (Dashboard, New, Upload, Mission, Run, Results, Chat)
+│
 ├── docs/                           hands-on guides (linked from Quick start)
-│   ├── WALKTHROUGH.md              step-by-step pipeline tour
+│   ├── NONTECH_GUIDE.md            no-code button-and-form walkthrough (web UI)
+│   ├── WALKTHROUGH.md              step-by-step pipeline tour (CLI + Claude Code)
 │   ├── PDF_RAG_GUIDE.md            ingest PDFs and tune RAG over them
 │   └── DATABASES_AND_CHAT.md       connect SQL/Oracle DBs for NLQ + chat REPL
 │

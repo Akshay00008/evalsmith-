@@ -6,8 +6,9 @@ Quick reference for finding the right guide.
 
 | Goal                                                              | Read                                                     |
 |-------------------------------------------------------------------|----------------------------------------------------------|
+| Use evalsmith without writing code (web UI, PM/BA-friendly)       | [NONTECH_GUIDE.md](NONTECH_GUIDE.md)                     |
 | Understand the architecture and concepts                          | [../README.md](../README.md)                             |
-| Install + run a project end-to-end (any modality)                 | [WALKTHROUGH.md](WALKTHROUGH.md)                         |
+| Install + run a project end-to-end via CLI + Claude Code          | [WALKTHROUGH.md](WALKTHROUGH.md)                         |
 | Use my own PDFs as a RAG corpus                                   | [PDF_RAG_GUIDE.md](PDF_RAG_GUIDE.md)                     |
 | Connect a SQL / Oracle / etc. database for NLQ                    | [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md) (Part 1)  |
 | Test the winning variant in an interactive chat                   | [DATABASES_AND_CHAT.md](DATABASES_AND_CHAT.md) (Part 2)  |
