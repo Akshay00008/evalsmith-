@@ -90,7 +90,9 @@ _PRICING_USD_PER_1M = {
     # ±10% so small pricing drifts don't invalidate prior runs.
     "claude-haiku-4-5":   {"in": 1.0,  "out": 5.0},
     "claude-sonnet-4-5":  {"in": 3.0,  "out": 15.0},
+    "claude-sonnet-4-6":  {"in": 3.0,  "out": 15.0},   # newer Sonnet drop-in
     "claude-opus-4-1":    {"in": 15.0, "out": 75.0},
+    "claude-opus-4-5":    {"in": 15.0, "out": 75.0},   # alias for newer Opus
     "gpt-4o-mini":        {"in": 0.15, "out": 0.6},
     "gpt-4o":             {"in": 2.5,  "out": 10.0},
 }

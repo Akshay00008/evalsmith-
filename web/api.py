@@ -39,6 +39,15 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+# Auto-load .env from repo root if python-dotenv is installed.
+# This lets developers run `uvicorn web.api:app --reload` without
+# manually exporting env vars every session.
+try:
+    from dotenv import load_dotenv as _load_dotenv  # type: ignore
+    _load_dotenv(_PROJECT_ROOT / ".env", override=False)
+except ImportError:
+    pass  # python-dotenv not installed — rely on shell env or Docker env_file
+
 from web import services  # noqa: E402
 
 

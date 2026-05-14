@@ -19,6 +19,14 @@ _PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
+# Auto-load .env from repo root so ANTHROPIC_API_KEY is picked up when
+# running `streamlit run webui/app.py` without manually exporting vars.
+try:
+    from dotenv import load_dotenv as _load_dotenv  # type: ignore
+    _load_dotenv(_PROJECT_ROOT / ".env", override=False)
+except ImportError:
+    pass  # python-dotenv not installed — rely on shell env or system vars
+
 import streamlit as st
 
 from webui.lib_glue import ensure_lib_on_path, list_projects

@@ -36,6 +36,8 @@ Thumbs.db
 .claude/settings.json
 .claude/settings.local.json
 
-# Env files
+# Env files — .env and any local variant are secret, never committed.
+# .env.example IS committed (it has no real keys, just the template).
 .env
 .env.*
+!.env.example

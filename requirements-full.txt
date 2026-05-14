@@ -49,5 +49,10 @@ uvicorn[standard]>=0.27
 jinja2>=3.1
 python-multipart>=0.0.9
 
+# Env file loading (.env → os.environ) -----------------------------
+# Lets `uvicorn web.api:app` and `streamlit run webui/app.py` pick up
+# the .env file from the repo root without manual `export` commands.
+python-dotenv>=1.0
+
 # Testing -----------------------------------------------------------
 pytest>=7.4
