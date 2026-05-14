@@ -393,7 +393,7 @@ async def run_start(name: str, max_iters: int = Form(8)):
     """Kick off the headless optimizer; returns an SSE stream of progress events."""
     sys.path.insert(0, str(_PROJECT_ROOT))
     from lib.schemas import Mission, EvalCase, EvalSet
-    from webui.headless_optimizer import run_optimization
+    from lib.headless_optimizer import run_optimization
 
     proj_path = services.project_dir(name)
     mission = Mission.model_validate_json((proj_path / "MISSION.json").read_text(encoding="utf-8"))

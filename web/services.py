@@ -436,7 +436,7 @@ def finalize_project(name: str) -> dict:
     from lib.schemas import Mission
     from lib.schemas.state import RunState
     from lib.schemas.trial import TrialResult
-    from webui.headless_optimizer import pin_winning_variant
+    from lib.headless_optimizer import pin_winning_variant
 
     p = project_dir(name)
     mission = Mission.model_validate_json((p / "MISSION.json").read_text(encoding="utf-8"))
