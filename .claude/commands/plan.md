@@ -19,7 +19,7 @@ You are entering `/plan` for project `$1`. Optional recipe: `$2` (e.g. `--recipe
    - **Operational floor** — "below this metric value, the project has failed". This must come from the user, not be inferred.
    - **Total budget USD** (default 50).
    - **Domain** — picked from `lib/domains/*` or `general`.
-   - **Eval strategy** — `judge_llm | exact_match | tool_call_match | ...`. If judge_llm, ask for a judge model (default `claude-sonnet-4-6`) and whether gold calibration labels exist.
+   - **Eval strategy** — `judge_llm | exact_match | tool_call_match | ...`. If judge_llm, ask for a judge model (default `claude-sonnet-4-5`) and whether gold calibration labels exist.
 5. The Architect writes `MISSION.json` (lib.schemas.Mission) and `memory/HYPOTHESES.jsonl` (filter `seeds/universal_seeds.jsonl` by capability + domain).
 6. Print a 4-line summary of the locked Mission to the user.
 

@@ -11,6 +11,19 @@
 
 <h1><i class="bi bi-upload"></i> Upload data</h1>
 
+<!-- Shared autocomplete list for the model-name inputs below.
+     Anthropic releases new model snapshots regularly and renames older ones,
+     so we keep the model input free-text and only suggest current likely-good
+     names. Update this list when Anthropic ships a new model. -->
+<datalist id="anthropic-models">
+    <option value="claude-haiku-4-5"></option>
+    <option value="claude-sonnet-4-5"></option>
+    <option value="claude-opus-4-1"></option>
+    <option value="claude-3-5-sonnet-20241022"></option>
+    <option value="claude-3-5-haiku-20241022"></option>
+    <option value="claude-3-opus-20240229"></option>
+</datalist>
+
 <!-- Tabs for the three independent upload categories -->
 <ul class="nav nav-tabs mt-3" role="tablist">
     <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-eval">Eval questions (required)</button></li>
@@ -67,11 +80,10 @@
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Model</label>
-                            <select id="gen-corpus-model" class="form-select form-select-sm">
-                                <option value="claude-haiku-4-5">Haiku (cheap)</option>
-                                <option value="claude-sonnet-4-6" selected>Sonnet (recommended)</option>
-                                <option value="claude-opus-4-7">Opus (best, expensive)</option>
-                            </select>
+                            <input id="gen-corpus-model" class="form-control form-control-sm"
+                                   list="anthropic-models" value="claude-sonnet-4-5"
+                                   placeholder="e.g. claude-sonnet-4-5">
+                            <div class="form-text">Free-text. Type the exact model id your Anthropic account has access to (Anthropic updates these regularly).</div>
                         </div>
                         <button class="btn btn-sm btn-primary"
                                 onclick="generateEvalSet('corpus')"
@@ -96,11 +108,9 @@
                         </div>
                         <div class="mb-2">
                             <label class="form-label small">Model</label>
-                            <select id="gen-db-model" class="form-select form-select-sm">
-                                <option value="claude-haiku-4-5">Haiku</option>
-                                <option value="claude-sonnet-4-6" selected>Sonnet (recommended)</option>
-                                <option value="claude-opus-4-7">Opus</option>
-                            </select>
+                            <input id="gen-db-model" class="form-control form-control-sm"
+                                   list="anthropic-models" value="claude-sonnet-4-5"
+                                   placeholder="e.g. claude-sonnet-4-5">
                         </div>
                         <button class="btn btn-sm btn-primary" onclick="generateEvalSet('db')">
                             <i class="bi bi-magic"></i> Generate from DB

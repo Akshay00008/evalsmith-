@@ -15,7 +15,7 @@
   ],
   "default_domain": "search_qa",
   "default_judge": {
-    "model": "claude-sonnet-4-6",
+    "model": "claude-sonnet-4-5",
     "score_kind": "likert_5",
     "system_prompt": "You are an evaluator scoring RAG QA outputs. Score 1-5: 5=fully correct AND cited; 4=correct but missing citations; 3=mostly correct; 2=partially correct; 1=wrong/hallucinated. Return JSON {score:int, rationale:str}."
   }

@@ -98,7 +98,7 @@ class VariantDiff(BaseModel):
     a time. The Operator materializes a full Variant by applying the diff."""
     parent_variant_id: str
     technique_family: TechniqueFamily
-    # JSON-pointer-ish keys. Example: {"prompt.system": "...", "generation.model": "claude-sonnet-4-6"}.
+    # JSON-pointer-ish keys. Example: {"prompt.system": "...", "generation.model": "claude-sonnet-4-5"}.
     # The applier in lib/variants.py walks the dotted keys.
     field_changes: dict[str, Any]
     rationale_note: str = ""

@@ -15,7 +15,7 @@ class JudgeSpec(BaseModel):
     """The judge configuration. Pinned per Mission so a re-run uses the
     *same* judge — otherwise we can't compare trials across iterations."""
     judge_id: str
-    model: str = "claude-sonnet-4-6"
+    model: str = "claude-sonnet-4-5"
     system_prompt: str
     # The output schema the judge must produce. We constrain to a small
     # enum to keep aggregation deterministic; free-form rationale is

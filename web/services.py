@@ -270,7 +270,7 @@ def generate_eval_from_corpus(name: str, *, n_cases: int = 20, model: str = "cla
     return _gen_result_to_dict(result)
 
 
-def generate_eval_from_db(name: str, *, n_cases: int = 20, model: str = "claude-sonnet-4-6") -> dict:
+def generate_eval_from_db(name: str, *, n_cases: int = 20, model: str = "claude-sonnet-4-5") -> dict:
     """LLM-generate NL → SQL pairs from the project's DB schema + sample rows."""
     import sys
     sys.path.insert(0, str(framework_root()))

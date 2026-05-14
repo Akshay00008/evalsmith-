@@ -94,8 +94,8 @@ def _arm_model_swaps() -> list[tuple[str, Callable[[Variant], dict]]]:
     """Cycle through models from cheapest to strongest. Auditor will block
     if cost projection breaks the budget."""
     return [
-        ("Try Sonnet (mid-tier)", lambda v: {"generation.model": "claude-sonnet-4-6"}),
-        ("Try Opus (top-tier)",   lambda v: {"generation.model": "claude-opus-4-7"}),
+        ("Try Sonnet (mid-tier)", lambda v: {"generation.model": "claude-sonnet-4-5"}),
+        ("Try Opus (top-tier)",   lambda v: {"generation.model": "claude-opus-4-1"}),
         ("Try Haiku (cheapest)",  lambda v: {"generation.model": "claude-haiku-4-5"}),
     ]
 

@@ -69,10 +69,10 @@ def test_doom_loop_detects_duplicate_within_window():
     # (no point flagging the same trial twice); the real collision case
     # is *similar* variants with different ids. Build a paraphrase-like
     # variant: same fingerprint, different generation params.
-    v3 = _make_variant(system="You are helpful.", model="claude-sonnet-4-6")
+    v3 = _make_variant(system="You are helpful.", model="claude-sonnet-4-5")
     doom_loop.append(d, v3, iteration=2)
     # Now make a paraphrase that normalizes to the same fingerprint as v3:
-    v_paraphrase = _make_variant(system="  YOU  are HELPFUL.\n", model="claude-sonnet-4-6")
+    v_paraphrase = _make_variant(system="  YOU  are HELPFUL.\n", model="claude-sonnet-4-5")
     is_dup2, _ = doom_loop.is_duplicate(d, v_paraphrase, lookback=10)
     assert is_dup2
 
@@ -84,8 +84,8 @@ def test_apply_diff_produces_valid_child():
     diff = type(parent)  # noqa - unused; keep import lightweight
     from lib.schemas.variant import VariantDiff
     d = VariantDiff(parent_variant_id=parent.variant_id, technique_family="model_swap",
-                    field_changes={"generation.model": "claude-sonnet-4-6"})
+                    field_changes={"generation.model": "claude-sonnet-4-5"})
     child = variants.apply_diff(parent, d)
-    assert child.generation.model == "claude-sonnet-4-6"
+    assert child.generation.model == "claude-sonnet-4-5"
     assert child.variant_id != parent.variant_id
     assert child.parent_variant_id == parent.variant_id

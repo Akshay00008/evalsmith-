@@ -233,7 +233,7 @@ async def generate_from_corpus_route(
 async def generate_from_db_route(
     name: str,
     n_cases: int = Form(20),
-    model: str = Form("claude-sonnet-4-6"),
+    model: str = Form("claude-sonnet-4-5"),
 ):
     """Use the project's schema + sample rows; LLM writes NL→SQL pairs."""
     try:

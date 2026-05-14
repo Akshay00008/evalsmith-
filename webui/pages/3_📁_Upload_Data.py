@@ -145,9 +145,13 @@ with tab_eval:
         )
         st.caption(f"{n_chunks} chunks currently indexed.")
         gen_n = st.number_input("Cases to generate", min_value=5, max_value=100, value=20, step=5, key="gen_corpus_n")
-        gen_model = st.selectbox(
-            "Model", ["claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-7"],
+        # Free-text so users can type whatever model id their Anthropic
+        # account supports — Anthropic rotates these regularly.
+        gen_model = st.text_input(
+            "Model",
+            value="claude-sonnet-4-5",
             key="gen_corpus_model",
+            help="Type your account's exact model id. Common: claude-haiku-4-5, claude-sonnet-4-5, claude-opus-4-1, claude-3-5-sonnet-20241022.",
         )
         if st.button("🪄 Generate from PDFs", disabled=(n_chunks == 0)):
             with st.spinner("Sampling chunks + calling LLM..."):
@@ -174,9 +178,11 @@ with tab_eval:
             else "No schema yet — configure DB on the Database tab first."
         )
         gen_db_n = st.number_input("Cases to generate ", min_value=5, max_value=100, value=20, step=5, key="gen_db_n")
-        gen_db_model = st.selectbox(
-            "Model ", ["claude-sonnet-4-6", "claude-haiku-4-5", "claude-opus-4-7"],
+        gen_db_model = st.text_input(
+            "Model ",
+            value="claude-sonnet-4-5",
             key="gen_db_model",
+            help="Type your account's exact model id (Anthropic updates these regularly).",
         )
         if st.button("🪄 Generate from DB", disabled=(not schema_path.exists())):
             with st.spinner("Reading schema + calling LLM..."):

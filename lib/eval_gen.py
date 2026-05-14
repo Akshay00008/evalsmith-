@@ -209,7 +209,7 @@ def generate_from_db(
     project_dir: Path,
     *,
     n_cases: int = 20,
-    model: str = "claude-sonnet-4-6",
+    model: str = "claude-sonnet-4-5",
     seed: int = 42,
     dialect: str = "ANSI SQL",
 ) -> GenerationResult:

@@ -35,5 +35,5 @@ CODE_ASSISTANT_DOMAIN = DomainProfile(
         "Before suggesting changes, identify the relevant tests; before destructive "
         "operations (rm, force-push, drop table), confirm explicitly."
     ),
-    seed_model="claude-sonnet-4-6",
+    seed_model="claude-sonnet-4-5",
 )
