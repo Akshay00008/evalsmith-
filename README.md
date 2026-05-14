@@ -2,7 +2,7 @@
 
 > Deterministic, multi-agent framework for building GenAI applications — RAG, NLQ, research agents, insight agents, chatbots, and search/recommendation engines. Built on Claude Code; agents collaborate through schema-validated JSON files instead of free-form chat. Cross-project knowledge compounds across runs.
 
-Inspired by the [AgenticEDAModellingTool](https://github.com/Faizan-SID26/AgenticEDAModellingTool) pattern, but the substrate is GenAI evals + traces (not tabular data), and the subagent roster is built around prompt/RAG/agent-design loops rather than statistical modeling.
+The substrate is GenAI evals + traces (eval cases, retrieval traces, judge reports, failure clusters), and the subagent roster is built around prompt/RAG/agent-design optimization loops rather than statistical modeling.
 
 ---
 
@@ -675,9 +675,3 @@ A. No. `db.json` is per-project and gitignored by the project template. The fram
 ## License
 
 Add your preferred license here (MIT/Apache 2.0/BSL/etc.). The repo currently ships without one.
-
----
-
-## Acknowledgments
-
-Architecture inspired by [Faizan-SID26/AgenticEDAModellingTool](https://github.com/Faizan-SID26/AgenticEDAModellingTool), which applies the same agentic discipline to tabular EDA + modeling. evalsmith carries the philosophy (schemas-as-truth, sketch substrate, knowledge compounding, deterministic guardrails) into the GenAI-application development domain.
