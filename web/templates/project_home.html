@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item active">{{ name }}</li>
+    </ol>
+</nav>
+
+<h1><i class="bi bi-folder"></i> {{ name }}</h1>
+
+{% if mission %}
+<p class="text-muted">
+    Goal: <code>{{ mission.success_criteria[0].metric }} {{ mission.success_criteria[0].operator }} {{ mission.success_criteria[0].target }}</code>
+    · Domain: <code>{{ mission.domain }}</code>
+    · Budget: <code>${{ mission.total_budget_usd }}</code>
+</p>
+{% else %}
+<p class="text-muted">Mission not locked yet.</p>
+{% endif %}
+
+<!-- Step cards. Each one shows whether that step is complete and links to the relevant screen. -->
+<div class="row g-3 mt-3">
+    <div class="col-md-3">
+        <div class="card h-100 {% if n_eval > 0 %}border-success{% endif %}">
+            <div class="card-body">
+                <h5><i class="bi bi-upload"></i> Step 1 · Upload data</h5>
+                <p class="text-muted small">{{ n_eval }} eval cases, {{ n_pdfs }} PDFs, {{ n_chunks }} chunks</p>
+                {% if n_eval >= 20 %}
+                <span class="badge text-bg-success">✓ ready</span>
+                {% elif n_eval > 0 %}
+                <span class="badge text-bg-warning">need ≥20 cases</span>
+                {% else %}
+                <span class="badge text-bg-secondary">no data yet</span>
+                {% endif %}
+                <div class="mt-3"><a class="btn btn-sm btn-outline-primary" href="/projects/{{ name }}/upload">Open</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card h-100 {% if mission %}border-success{% endif %}">
+            <div class="card-body">
+                <h5><i class="bi bi-bullseye"></i> Step 2 · Mission</h5>
+                <p class="text-muted small">Goal, metric, budget, target</p>
+                {% if mission %}
+                <span class="badge text-bg-success">✓ locked</span>
+                {% else %}
+                <span class="badge text-bg-secondary">not set</span>
+                {% endif %}
+                <div class="mt-3"><a class="btn btn-sm btn-outline-primary" href="/projects/{{ name }}/mission">Open</a></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card h-100 {% if n_trials > 0 %}border-success{% endif %}">
+            <div class="card-body">
+                <h5><i class="bi bi-rocket-takeoff"></i> Step 3 · Run</h5>
+                <p class="text-muted small">{{ n_trials }} trials run so far</p>
+                {% if n_trials > 0 %}
+                <span class="badge text-bg-success">✓ {{ n_trials }} trials</span>
+                {% else %}
+                <span class="badge text-bg-secondary">not started</span>
+                {% endif %}
+                <div class="mt-3">
+                    <a class="btn btn-sm btn-outline-primary {% if not mission %}disabled{% endif %}" href="/projects/{{ name }}/run">Open</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card h-100 {% if has_final %}border-success{% endif %}">
+            <div class="card-body">
+                <h5><i class="bi bi-file-earmark-text"></i> Step 4 · Results</h5>
+                <p class="text-muted small">Read FINAL.md + chat</p>
+                {% if has_final %}
+                <span class="badge text-bg-success">✓ finalized</span>
+                {% else %}
+                <span class="badge text-bg-secondary">not yet</span>
+                {% endif %}
+                <div class="mt-3 d-flex gap-1">
+                    <a class="btn btn-sm btn-outline-primary {% if not has_final %}disabled{% endif %}" href="/projects/{{ name }}/results">Results</a>
+                    <a class="btn btn-sm btn-outline-primary {% if not mission %}disabled{% endif %}" href="/projects/{{ name }}/chat">Chat</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

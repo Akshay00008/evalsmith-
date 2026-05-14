@@ -1,0 +1,10 @@
+{# HTMX target: this fragment gets appended to #chat-window after each user message. #}
+<div class="d-flex justify-content-end mb-2">
+    <div class="p-2 rounded bg-primary text-white" style="max-width: 75%;">{{ user_msg }}</div>
+</div>
+<div class="d-flex justify-content-start mb-2">
+    <div class="p-2 rounded bg-light" style="max-width: 75%; white-space: pre-wrap;">
+{{- assistant_msg -}}
+        {% if diag %}<div class="small text-muted mt-1">{{ diag }}</div>{% endif %}
+    </div>
+</div>

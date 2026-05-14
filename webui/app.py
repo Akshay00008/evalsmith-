@@ -9,6 +9,16 @@
 # a clear "what is this screen for" header and forms the user fills in.
 
 from __future__ import annotations
+import sys
+from pathlib import Path
+
+# Streamlit runs this file directly, so the project root isn't on sys.path
+# automatically. We inject it so `from webui.lib_glue import ...` resolves.
+# Must happen BEFORE the webui import.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
 import streamlit as st
 
 from webui.lib_glue import ensure_lib_on_path, list_projects

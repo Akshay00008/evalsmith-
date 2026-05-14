@@ -1,0 +1,42 @@
+# docker-compose.yml
+# One-command local deployment. From the repo root:
+#
+#   docker compose up --build
+#
+# Then open http://localhost:8000.
+#
+# Volumes:
+#   ./projects   -> /app/projects     (persistent workspaces — survives `docker compose down`)
+#   ./knowledge  -> /app/knowledge    (cross-project knowledge library)
+#
+# The container reads ANTHROPIC_API_KEY / OPENAI_API_KEY from the env if
+# you provide them (via .env or shell). Without them, the framework runs
+# in deterministic-stub mode — useful for first-time exploration.
+
+services:
+  evalsmith:
+    build: .
+    image: evalsmith:latest
+    container_name: evalsmith
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      # Project workspaces live outside the container so they persist
+      # across rebuilds / restarts / image upgrades.
+      - ./projects:/app/projects
+      # Knowledge library is also bind-mounted so /contribute writes survive.
+      - ./knowledge:/app/knowledge
+    environment:
+      # API keys flow through from the host shell or a .env file at repo root.
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # If you set this, the framework's `knowledge/` retrieval points
+      # there instead of the default. Useful for shared knowledge stores.
+      GENAI_KNOWLEDGE_ROOT: ${GENAI_KNOWLEDGE_ROOT:-/app/knowledge}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

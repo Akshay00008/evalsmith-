@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1><i class="bi bi-plus-circle"></i> New project</h1>
+<p class="text-muted">Three quick steps. You can adjust everything later.</p>
+
+{% if error %}
+<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> {{ error }}</div>
+{% endif %}
+
+<form method="POST" action="/projects/new" class="card p-4" style="max-width: 720px;">
+    <div class="mb-4">
+        <label class="form-label fw-bold">Step 1 — Name your project</label>
+        <input type="text" class="form-control" name="name"
+               placeholder="e.g. customer_policy_qa"
+               value="{{ form_name or '' }}"
+               pattern="[A-Za-z0-9_-]{2,40}" required>
+        <div class="form-text">Letters, numbers, underscore, dash. 2–40 characters. No spaces.</div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-bold">Step 2 — What kind of project is this?</label>
+        <select class="form-select" name="recipe" required>
+            {% for label, key in modality_options %}
+            <option value="{{ key }}" {% if form_recipe == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Each option is a recipe — pre-configured defaults for that workflow.</div>
+    </div>
+
+    <div class="mb-4">
+        <label class="form-label fw-bold">Step 3 — Pick a domain hint</label>
+        <select class="form-select" name="domain">
+            {% for d in domain_options %}
+            <option value="{{ d }}" {% if form_domain == d %}selected{% endif %}>{{ d }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Domain-specific best practices injected into the optimizer. 'general' is fine if nothing fits.</div>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg"></i> Create project</button>
+        <a class="btn btn-light" href="/">Cancel</a>
+    </div>
+</form>
+
+{% endblock %}

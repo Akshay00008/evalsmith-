@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/projects/{{ name }}">{{ name }}</a></li>
+        <li class="breadcrumb-item active">Chat</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center">
+    <h1><i class="bi bi-chat-dots"></i> Chat with your assistant</h1>
+    <form method="POST" action="/projects/{{ name }}/chat/reset" class="m-0">
+        <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-arrow-clockwise"></i> Reset conversation</button>
+    </form>
+</div>
+
+<div class="card mt-3">
+    <!-- Message list. HTMX appends new pairs after a user sends a message. -->
+    <div id="chat-window" class="p-3" style="height: 60vh; overflow-y: auto;">
+        {% for m in messages %}
+        <div class="d-flex {{ 'justify-content-end' if m.role == 'user' else 'justify-content-start' }} mb-2">
+            <div class="p-2 rounded {{ 'bg-primary text-white' if m.role == 'user' else 'bg-light' }}" style="max-width: 75%;">
+                {{ m.content }}
+                {% if m.diag %}<div class="small text-muted mt-1">{{ m.diag }}</div>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        {% if not messages %}
+        <div class="text-center text-muted py-4">No messages yet — type below to start.</div>
+        {% endif %}
+    </div>
+
+    <form class="p-3 border-top d-flex gap-2"
+          hx-post="/projects/{{ name }}/chat"
+          hx-target="#chat-window"
+          hx-swap="beforeend"
+          hx-on::after-request="document.querySelector('input[name=message]').value=''; document.getElementById('chat-window').scrollTop = document.getElementById('chat-window').scrollHeight;">
+        <input class="form-control" name="message" placeholder="Type your message..." autocomplete="off" required autofocus>
+        <button class="btn btn-primary"><i class="bi bi-send"></i></button>
+    </form>
+</div>
+
+<p class="text-muted small mt-3">
+    <i class="bi bi-info-circle"></i> This is the winning variant from optimization.
+    For RAG projects, retrieved chunk ids appear in each answer.
+    For NLQ projects, the generated SQL and result table are shown.
+</p>
+
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/projects/{{ name }}">{{ name }}</a></li>
+        <li class="breadcrumb-item active">Mission</li>
+    </ol>
+</nav>
+
+<h1><i class="bi bi-bullseye"></i> Mission</h1>
+
+{% if existing %}
+<!-- Mission already locked — show it + offer to discard -->
+<div class="alert alert-success">
+    <i class="bi bi-check-circle"></i> Mission already locked. ID: <code>{{ existing.mission_id }}</code>
+</div>
+<details class="mb-3">
+    <summary>View locked Mission</summary>
+    <pre class="bg-light p-3 small mt-2">{{ existing | tojson(indent=2) }}</pre>
+</details>
+<a class="btn btn-primary" href="/projects/{{ name }}/run">Go to Run →</a>
+{% else %}
+
+{% if n_eval < 20 %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    Need at least <strong>20 eval cases</strong> to lock a Mission. You currently have <strong>{{ n_eval }}</strong>.
+    <a href="/projects/{{ name }}/upload" class="alert-link">Go upload more</a>.
+</div>
+{% else %}
+
+<p class="text-muted">Set the goals — once locked, the Mission is immutable.</p>
+
+<form method="POST" action="/projects/{{ name }}/mission" class="card p-4">
+    <div class="mb-3">
+        <label class="form-label fw-bold">Goal (one or two sentences)</label>
+        <textarea class="form-control" name="goal_prose" rows="2" required
+                  placeholder="e.g. Customers should get accurate, sourced answers to policy questions in under 4 seconds."></textarea>
+    </div>
+
+    <input type="hidden" name="modality" value="{{ default_modality }}">
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Primary metric</label>
+            <select class="form-select" name="metric">
+                {% for key, label in metric_options %}
+                <option value="{{ key }}" {% if key == default_metric %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Eval strategy</label>
+            <select class="form-select" name="eval_strategy">
+                {% for key, label in strategy_options %}
+                <option value="{{ key }}" {% if key == default_strategy %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Target <span class="text-muted small">(stop here)</span></label>
+            <input type="range" class="form-range" name="target" id="target-range" min="0" max="1" step="0.05" value="{{ default_target }}"
+                   oninput="document.getElementById('target-val').textContent = this.value">
+            <div class="text-end"><span id="target-val">{{ default_target }}</span></div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label fw-bold">Operational floor <span class="text-muted small">(failure threshold)</span></label>
+            <input type="range" class="form-range" name="floor" id="floor-range" min="0" max="1" step="0.05" value="{{ default_floor }}"
+                   oninput="document.getElementById('floor-val').textContent = this.value">
+            <div class="text-end"><span id="floor-val">{{ default_floor }}</span></div>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Total budget (USD)</label>
+            <input type="number" class="form-control" name="total_budget_usd" value="50" min="0.5" step="0.5">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Max iterations</label>
+            <input type="number" class="form-control" name="max_iterations" value="15" min="3" max="200">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Domain</label>
+            <select class="form-select" name="domain">
+                {% for d in domain_options %}
+                <option value="{{ d }}" {% if d == default_domain %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="alert alert-warning small">
+        <i class="bi bi-info-circle"></i> Once locked, the Mission can't be changed. To change goals, discard + re-lock or start a new project.
+    </div>
+
+    <button type="submit" class="btn btn-primary"><i class="bi bi-lock"></i> Lock Mission</button>
+</form>
+
+{% endif %}
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,61 @@
+# .dockerignore
+# Files excluded from the Docker build context. Smaller context = faster
+# builds + smaller layers. Anything user-data (projects/, knowledge/) is
+# bind-mounted at runtime via docker-compose, so we don't need it baked in.
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python caches + virtual envs
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+my_virtual_env/
+
+# Test + tool caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# IDE / OS detritus
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Project workspaces — bind-mounted at runtime, not baked in.
+projects/*
+!projects/.templates/
+
+# Per-user Claude Code settings (the example template is shipped though).
+.claude/settings.json
+.claude/settings.local.json
+
+# Local environment files
+.env
+.env.*
+
+# Docker artifacts
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Streamlit UI — the FastAPI image doesn't need it. Skipping reduces
+# image size (Streamlit + pandas are large). Comment this out if you
+# want Streamlit available inside the container too.
+webui/
+
+# Misc
+*.tmp
+*.log

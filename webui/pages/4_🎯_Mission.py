@@ -2,6 +2,14 @@
 # the optimization goals (metric, target, floor, budget) via a form.
 
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+# Streamlit runs each page directly, so the project root isn't on sys.path
+# automatically. We inject it so the webui imports resolve.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 import json
 from pathlib import Path
 

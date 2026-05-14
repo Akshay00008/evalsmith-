@@ -6,6 +6,14 @@
 # before /plan and /run.
 
 from __future__ import annotations
+
+import sys
+from pathlib import Path
+# Streamlit runs each page directly, so the project root isn't on sys.path
+# automatically. We inject it so the webui imports resolve.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
 from pathlib import Path
 import json
 import io
@@ -160,7 +168,6 @@ with tab_pdfs:
         if st.button("⚙️ Ingest PDFs into searchable corpus", type="primary"):
             # Use the same logic as tools/ingest_pdfs.py without subprocess.
             try:
-                import sys
                 from pathlib import Path as _Path
                 sys.path.insert(0, str(_Path(__file__).resolve().parent.parent.parent))
                 from tools.ingest_pdfs import ingest_project

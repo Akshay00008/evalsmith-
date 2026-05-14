@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+
+<nav class="mb-3" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/projects/{{ name }}">{{ name }}</a></li>
+        <li class="breadcrumb-item active">Upload data</li>
+    </ol>
+</nav>
+
+<h1><i class="bi bi-upload"></i> Upload data</h1>
+
+<!-- Tabs for the three independent upload categories -->
+<ul class="nav nav-tabs mt-3" role="tablist">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-eval">Eval questions (required)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-pdfs">PDFs (RAG)</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-db">Database (NLQ)</button></li>
+</ul>
+
+<div class="tab-content border border-top-0 p-4 bg-white">
+
+    <!-- ================== Eval set ================== -->
+    <div class="tab-pane fade show active" id="tab-eval">
+        <p>Upload your test questions + gold answers.</p>
+        <p class="small text-muted">
+            Accepted: <code>.csv</code>, <code>.xlsx</code>, <code>.jsonl</code>.
+            Required columns: <code>case_id</code>, <code>input</code>. Optional: <code>expected</code>, <code>tags</code>, <code>relevant_doc_ids</code>.
+        </p>
+
+        <!-- HTMX form: posts the file, swaps the response into #eval-result -->
+        <form hx-post="/projects/{{ name }}/upload/eval"
+              hx-encoding="multipart/form-data"
+              hx-target="#eval-result"
+              hx-swap="innerHTML">
+            <input type="file" name="file" class="form-control" accept=".csv,.xlsx,.jsonl,.json" required>
+            <button type="submit" class="btn btn-primary mt-2">Upload eval set</button>
+        </form>
+        <div id="eval-result" class="mt-3">
+            {% if n_eval > 0 %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> Current eval set: <strong>{{ n_eval }}</strong> cases.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ================== PDFs ================== -->
+    <div class="tab-pane fade" id="tab-pdfs">
+        <p>Drop PDFs to ingest. After upload, click <strong>Ingest</strong> to chunk + index them.</p>
+
+        <form hx-post="/projects/{{ name }}/upload/pdfs"
+              hx-encoding="multipart/form-data"
+              hx-target="#pdf-upload-result"
+              hx-swap="innerHTML">
+            <input type="file" name="files" class="form-control" accept=".pdf" multiple required>
+            <button type="submit" class="btn btn-primary mt-2">Upload PDFs</button>
+        </form>
+        <div id="pdf-upload-result" class="mt-3">
+            {% if n_pdfs > 0 %}
+            <p class="text-muted small">{{ n_pdfs }} PDF(s) currently in this project.</p>
+            {% endif %}
+        </div>
+
+        <hr>
+        <h6>Ingestion settings</h6>
+        <form hx-post="/projects/{{ name }}/upload/ingest"
+              hx-target="#ingest-result"
+              hx-swap="innerHTML">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label class="form-label small">Chunk size (chars)</label>
+                    <input type="number" name="chunk_size" class="form-control" value="1500" min="400" max="3000">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="form-label small">Overlap (chars)</label>
+                    <input type="number" name="overlap" class="form-control" value="200" min="0" max="500">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-gear"></i> Ingest PDFs</button>
+        </form>
+        <div id="ingest-result" class="mt-3">
+            {% if n_chunks > 0 %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle"></i> Current corpus: <strong>{{ n_chunks }}</strong> chunks.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ================== DB ================== -->
+    <div class="tab-pane fade" id="tab-db">
+        <p>Connect a read-only database for NLQ projects.</p>
+        <form hx-post="/projects/{{ name }}/upload/db"
+              hx-target="#db-result"
+              hx-swap="innerHTML">
+            <div class="mb-2">
+                <label class="form-label small">Database type</label>
+                <select name="db_type" class="form-select" id="db-type" onchange="document.querySelectorAll('[data-dbgroup]').forEach(e=>e.style.display='none'); document.querySelectorAll('[data-dbgroup=\''+this.value+'\']').forEach(e=>e.style.display='');">
+                    <option value="sqlite">SQLite (file on disk)</option>
+                    <option value="postgresql">PostgreSQL</option>
+                    <option value="mysql">MySQL / MariaDB</option>
+                    <option value="oracle">Oracle</option>
+                    <option value="mssql">MS SQL Server</option>
+                </select>
+            </div>
+
+            <div data-dbgroup="sqlite">
+                <label class="form-label small">Path to .db file</label>
+                <input name="sqlite_path" class="form-control" placeholder="./projects/{{ name }}/data/sample.db">
+            </div>
+
+            <div data-dbgroup="postgresql" data-dbgroup-mysql data-dbgroup-oracle data-dbgroup-mssql style="display:none;">
+                <div class="row">
+                    <div class="col-md-6 mb-2"><label class="form-label small">Host</label><input name="host" class="form-control" placeholder="localhost"></div>
+                    <div class="col-md-6 mb-2"><label class="form-label small">Port</label><input name="port" class="form-control" placeholder="5432"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-2"><label class="form-label small">Database name</label><input name="dbname" class="form-control"></div>
+                    <div class="col-md-6 mb-2"><label class="form-label small">Service (Oracle)</label><input name="service" class="form-control"></div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-2"><label class="form-label small">Username</label><input name="user" class="form-control"></div>
+                    <div class="col-md-6 mb-2"><label class="form-label small">Password</label><input type="password" name="password" class="form-control"></div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6"><label class="form-label small">Query timeout (ms)</label><input type="number" name="timeout_ms" class="form-control" value="5000"></div>
+                <div class="col-md-6"><label class="form-label small">Max rows</label><input type="number" name="max_rows" class="form-control" value="1000"></div>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3"><i class="bi bi-plug"></i> Test connection + introspect schema</button>
+        </form>
+        <div id="db-result" class="mt-3"></div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a class="btn btn-outline-primary" href="/projects/{{ name }}">← Back to project</a>
+    {% if n_eval >= 20 %}
+    <a class="btn btn-primary" href="/projects/{{ name }}/mission">Next: Mission →</a>
+    {% endif %}
+</div>
+
+<script>
+// Pretty-print the JSON response from form submissions inline.
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const target = evt.detail.target;
+    if (!target || !evt.detail.xhr) return;
+    const ct = evt.detail.xhr.getResponseHeader('content-type') || '';
+    if (ct.includes('application/json')) {
+        try {
+            const j = JSON.parse(evt.detail.xhr.responseText);
+            if (j.message) {
+                target.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> ' + j.message + '</div>';
+            } else if (j.ok === false || j.error) {
+                target.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> ' + (j.error || 'Failed') + '</div>';
+            } else if (j.ok === true && j.schema) {
+                target.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> Connected.</div><pre class="bg-light p-3 small">' + j.schema + '</pre>';
+            }
+        } catch (e) { /* leave as-is */ }
+    }
+});
+</script>
+
+{% endblock %}

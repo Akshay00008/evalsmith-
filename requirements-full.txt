@@ -39,9 +39,15 @@ pymysql>=1.1            # MySQL / MariaDB
 #   pip install oracledb         (Oracle)
 #   pip install pyodbc           (MSSQL, also needs ODBC Driver 18)
 
-# Web UI (Streamlit) ------------------------------------------------
+# Web UI — Streamlit (local dev / demos) ----------------------------
 streamlit>=1.30
 pandas>=2.0
+
+# Web UI — FastAPI + Jinja2 (Docker-deployable production) ----------
+fastapi>=0.110
+uvicorn[standard]>=0.27
+jinja2>=3.1
+python-multipart>=0.0.9
 
 # Testing -----------------------------------------------------------
 pytest>=7.4

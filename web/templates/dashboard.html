@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-grid"></i> Dashboard</h1>
+    <a class="btn btn-primary" href="/projects/new"><i class="bi bi-plus-circle"></i> New project</a>
+</div>
+
+{% if not projects %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No projects yet. Click <strong>New project</strong> to create your first one.
+</div>
+{% else %}
+
+<!-- Summary stats. Quick at-a-glance of what's happening across all projects. -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-bg-light">
+            <div class="card-body">
+                <h6 class="text-muted small mb-1">Total projects</h6>
+                <div class="display-6 fw-bold">{{ projects|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body">
+                <h6 class="small mb-1">Finalized</h6>
+                <div class="display-6 fw-bold">{{ projects|selectattr('finalized')|list|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body">
+                <h6 class="small mb-1">In progress</h6>
+                <div class="display-6 fw-bold">{{ projects|selectattr('has_log')|rejectattr('finalized')|list|length }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-bg-secondary">
+            <div class="card-body">
+                <h6 class="small mb-1">Awaiting setup</h6>
+                <div class="display-6 fw-bold">{{ projects|rejectattr('has_log')|list|length }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Project table. Each row links to the project home. -->
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Trials</th>
+                    <th>Spent</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in projects %}
+                <tr>
+                    <td>
+                        <a class="fw-bold text-decoration-none" href="/projects/{{ p.name }}">
+                            <i class="bi bi-folder"></i> {{ p.name }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if p.finalized %}
+                            <span class="badge text-bg-success">{{ p.badge }}</span>
+                        {% elif p.has_log %}
+                            <span class="badge text-bg-warning">{{ p.badge }}</span>
+                        {% elif p.has_mission %}
+                            <span class="badge text-bg-info">{{ p.badge }}</span>
+                        {% else %}
+                            <span class="badge text-bg-secondary">{{ p.badge }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ p.n_trials }}</td>
+                    <td>${{ "%.2f"|format(p.spent_usd) }}</td>
+                    <td><a class="btn btn-sm btn-outline-primary" href="/projects/{{ p.name }}">Open <i class="bi bi-arrow-right"></i></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

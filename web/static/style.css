@@ -1,0 +1,18 @@
+/* web/static/style.css
+   Minimal custom styles on top of Bootstrap 5. */
+
+/* Page padding so content doesn't sit against the navbar. */
+body { min-height: 100vh; }
+
+/* Tighten card spacing on smaller screens. */
+.card { box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+
+/* Activity log on the Run page — monospaced and dense. */
+#activity div {
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Chat bubbles — slight rounding plus a max width that scales. */
+#chat-window > div { animation: fadein 0.2s ease-out; }
+@keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

@@ -456,15 +456,23 @@ genai replay my_first       # verify determinism
 
 ### No-code web UI
 
-For non-developers (PMs, BAs, SMEs) there's a Streamlit-based UI with 7 screens (Dashboard → New Project → Upload Data → Mission → Run → Results → Chat). Drives the headless optimizer instead of the Claude-Code subagent loop, so it works without Claude Code:
+For non-developers (PMs, BAs, SMEs) there are **two** UI options. Both drive the same headless optimizer (no Claude Code needed):
 
+**Option A — Docker (recommended for sharing / deployment):**
+```bash
+docker compose up --build
+# Open http://localhost:8000
+```
+FastAPI + HTMX. Single container, one port, persistent project storage via bind-mount. Full deploy guide: [docs/DOCKER_DEPLOY.md](docs/DOCKER_DEPLOY.md).
+
+**Option B — Streamlit (local dev / single-user):**
 ```bash
 pip install -e ".[ui]"
 streamlit run webui/app.py
 # Open http://localhost:8501
 ```
 
-Full walkthrough: [docs/NONTECH_GUIDE.md](docs/NONTECH_GUIDE.md).
+Same 7 screens in both UIs (Dashboard → New Project → Upload Data → Mission → Run → Results → Chat). Full screen-by-screen walkthrough: [docs/NONTECH_GUIDE.md](docs/NONTECH_GUIDE.md).
 
 ---
 

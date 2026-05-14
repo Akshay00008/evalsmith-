@@ -40,9 +40,19 @@ db = ["sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1"]
 #   pip install oracledb     (Oracle)
 #   pip install pyodbc       (MSSQL, also needs ODBC Driver 18)
 #
-# `ui` extra: Streamlit-based web UI for non-technical users
-# (PMs / BAs / analysts). Run with `streamlit run webui/app.py`.
+# `ui` extra: Streamlit-based web UI for non-technical users.
+# Run with `streamlit run webui/app.py`. Good for local dev / demos.
 ui = ["streamlit>=1.30", "pandas>=2.0"]
+# `web` extra: FastAPI + Jinja2 frontend, Docker-deployable. Run with
+# `uvicorn web.api:app` or `docker compose up`. Production-grade
+# alternative to the Streamlit UI; single Python process, one port,
+# trivial Dockerfile. python-multipart is required for FastAPI's
+# Form/File handling.
+web = [
+    "fastapi>=0.110", "uvicorn[standard]>=0.27",
+    "jinja2>=3.1", "python-multipart>=0.0.9",
+    "pandas>=2.0",
+]
 test = ["pytest>=7.4"]
 # Convenience meta-extra: installs every optional dependency in one go.
 # Use this when you don't want to think about which extras you need:
@@ -53,6 +63,7 @@ all = [
     "pypdf>=4.0", "rank-bm25>=0.2", "chromadb>=0.4",
     "sqlalchemy>=2.0", "psycopg[binary]>=3.1", "pymysql>=1.1",
     "streamlit>=1.30", "pandas>=2.0",
+    "fastapi>=0.110", "uvicorn[standard]>=0.27", "jinja2>=3.1", "python-multipart>=0.0.9",
     "pytest>=7.4",
 ]
 
