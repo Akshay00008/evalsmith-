@@ -45,6 +45,9 @@
     </div>
 </div>
 
+<!-- Real-time backend status badge — populated by /api/backend on page load -->
+<div id="backend-banner" class="mb-3"></div>
+
 <!-- Start optimization card -->
 <div class="card p-4 mb-3">
     <h5>Start optimization</h5>
@@ -151,6 +154,33 @@ const PHASE_CSS = {
     terminated: 'text-warning fw-bold',
     error:      'text-danger fw-bold',
 };
+
+// ---------------------------------------------------------------------------
+// Check backend status on page load
+// ---------------------------------------------------------------------------
+(async function checkBackend() {
+    try {
+        const r = await fetch('/api/backend');
+        const j = await r.json();
+        const banner = document.getElementById('backend-banner');
+        if (j.stub) {
+            banner.innerHTML = `
+              <div class="alert alert-warning py-2 small mb-0">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <strong>Stub mode active</strong> — the container does not have an
+                <code>ANTHROPIC_API_KEY</code>. All metrics will be 0.000.
+                <a href="#stub-explainer" class="alert-link">Fix it ↓</a>
+              </div>`;
+        } else {
+            banner.innerHTML = `
+              <div class="alert alert-success py-2 small mb-0">
+                <i class="bi bi-check-circle-fill"></i>
+                <strong>Live mode</strong> — backend: <code>${j.backend}</code>,
+                key: <code>${j.key_prefix}</code>. Real LLM calls will be made.
+              </div>`;
+        }
+    } catch { /* ignore network errors */ }
+})();
 
 // Track arm usage counts for the summary line
 const armCounts = {};

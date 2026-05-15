@@ -79,6 +79,26 @@ def _backend() -> str:
     return "stub"
 
 
+def log_backend_status() -> str:
+    """Call once at startup to print which backend is active. Helps diagnose
+    stub mode when the API key is present but not reaching the container."""
+    import logging
+    backend = _backend()
+    log = logging.getLogger("evalsmith.registry")
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    if backend == "anthropic":
+        log.info("Backend: ANTHROPIC  (key present, prefix=%s...)", key[:18])
+    elif backend == "openai":
+        log.info("Backend: OPENAI  (key present)")
+    else:
+        log.warning(
+            "Backend: STUB — no API keys found in os.environ. "
+            "Set ANTHROPIC_API_KEY in .env and restart. "
+            "All LLM outputs will be deterministic fake strings."
+        )
+    return backend
+
+
 # ---------------------------------------------------------------------------
 # Pricing table — used to estimate cost when the SDK doesn't report it.
 # USD per 1M tokens. Update when pricing changes; kept here (not in env) so

@@ -70,6 +70,14 @@ logging.basicConfig(
 )
 logging.getLogger("evalsmith").setLevel(logging.DEBUG)
 
+# Print backend status immediately at import time so the very first line
+# of Docker logs tells you whether the API key reached the container.
+try:
+    from lib.registry import log_backend_status as _log_backend
+    _log_backend()
+except Exception:
+    pass
+
 app = FastAPI(
     title="evalsmith web",
     description="No-code Docker-deployable UI for the evalsmith framework.",
@@ -98,6 +106,21 @@ from fastapi.responses import Response
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon() -> Response:
     return Response(status_code=204)
+
+
+@app.get("/api/backend", include_in_schema=False)
+async def backend_status():
+    """Returns which LLM backend is active. The run page polls this once
+    on load to show a real-time stub-mode warning or confirmation."""
+    from lib.registry import _backend
+    import os
+    b = _backend()
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    return JSONResponse({
+        "backend": b,
+        "key_prefix": key[:12] + "..." if key else "",
+        "stub": b == "stub",
+    })
 
 
 # ---------------------------------------------------------------------------

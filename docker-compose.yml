@@ -9,9 +9,11 @@
 #   ./projects   -> /app/projects     (persistent workspaces — survives `docker compose down`)
 #   ./knowledge  -> /app/knowledge    (cross-project knowledge library)
 #
-# The container reads ANTHROPIC_API_KEY / OPENAI_API_KEY from the env if
-# you provide them (via .env or shell). Without them, the framework runs
-# in deterministic-stub mode — useful for first-time exploration.
+# API keys:
+#   Create a .env file at repo root (copy .env.example → .env) and fill in
+#   your ANTHROPIC_API_KEY. The `env_file` directive below injects every
+#   variable from that file directly into the container — no shell export needed.
+#   If .env doesn't exist the container starts anyway (stub mode).
 
 services:
   evalsmith:
@@ -27,13 +29,24 @@ services:
       - ./projects:/app/projects
       # Knowledge library is also bind-mounted so /contribute writes survive.
       - ./knowledge:/app/knowledge
+
+    # env_file loads the .env from the repo root DIRECTLY into the container's
+    # os.environ — the most reliable method across all Docker Compose versions.
+    # Shell-level overrides (environment: section below) take priority over
+    # anything set in the file.
+    env_file:
+      - path: .env
+        required: false   # don't fail if .env doesn't exist (stub mode)
+
     environment:
-      # API keys flow through from the host shell or a .env file at repo root.
+      # These override the env_file values if set in the host shell.
+      # Useful for CI / cloud deployments where keys come from secrets managers.
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       # If you set this, the framework's `knowledge/` retrieval points
       # there instead of the default. Useful for shared knowledge stores.
       GENAI_KNOWLEDGE_ROOT: ${GENAI_KNOWLEDGE_ROOT:-/app/knowledge}
+
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/healthz"]
       interval: 30s
