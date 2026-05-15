@@ -11,38 +11,119 @@
 
 <h1><i class="bi bi-rocket-takeoff"></i> Run</h1>
 
+<!-- Summary cards -->
 <div class="row g-3 mb-3">
-    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body"><h6 class="small mb-1 text-muted">Project</h6><div class="fw-bold">{{ name }}</div></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body"><h6 class="small mb-1 text-muted">Goal</h6><div class="fw-bold small"><code>{{ mission.success_criteria[0].metric }} {{ mission.success_criteria[0].operator }} {{ mission.success_criteria[0].target }}</code></div></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body"><h6 class="small mb-1 text-muted">Budget</h6><div class="fw-bold">${{ "%.2f"|format(spent) }} / ${{ mission.total_budget_usd }}</div></div></div></div>
-    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body"><h6 class="small mb-1 text-muted">Trials so far</h6><div class="fw-bold">{{ n_trials }} / {{ mission.max_iterations }}</div></div></div></div>
+    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body">
+        <h6 class="small mb-1 text-muted">Project</h6><div class="fw-bold">{{ name }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body">
+        <h6 class="small mb-1 text-muted">Goal</h6>
+        <div class="fw-bold small"><code>{{ mission.success_criteria[0].metric }} {{ mission.success_criteria[0].operator }} {{ mission.success_criteria[0].target }}</code></div>
+        <div class="text-muted small">Floor: {{ mission.success_criteria[0].operational_floor }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body">
+        <h6 class="small mb-1 text-muted">Budget</h6>
+        <div class="fw-bold">${{ "%.2f"|format(spent) }} / ${{ mission.total_budget_usd }}</div>
+    </div></div></div>
+    <div class="col-md-3"><div class="card text-bg-light"><div class="card-body">
+        <h6 class="small mb-1 text-muted">Trials so far</h6>
+        <div class="fw-bold" id="trials-counter">{{ n_trials }} / {{ mission.max_iterations }}</div>
+    </div></div></div>
 </div>
 
+<!-- What is happening? plain-English explainer -->
+<div class="alert alert-info d-flex align-items-start gap-2 mb-3 py-2">
+    <i class="bi bi-info-circle-fill mt-1 flex-shrink-0"></i>
+    <div class="small">
+        <strong>How the optimizer works:</strong>
+        Each iteration picks a technique to try (<em>arm</em>), checks it isn't a duplicate (<em>Sentinel</em>),
+        validates cost + safety (<em>Auditor</em>), then runs your entire eval set against that variant (<em>Trial</em>).
+        The best-scoring variant wins. All outputs go through a judge that scores 0–1.
+        <strong>If all metrics show 0.000</strong> → you're in <em>stub mode</em> (no API key set) —
+        outputs are fake hashes so no real scoring happens.
+        <a href="#stub-explainer" class="alert-link">See below ↓</a>
+    </div>
+</div>
+
+<!-- Start optimization card -->
 <div class="card p-4 mb-3">
     <h5>Start optimization</h5>
-    <p class="small text-muted">Each iteration runs the full eval set against a new variant. Stop anytime — progress is saved.</p>
-
-    <div class="d-flex gap-2 align-items-end">
+    <p class="small text-muted">
+        Each iteration runs the full eval set once against a new variant the optimizer proposes.
+        Progress is saved after every trial — you can stop and resume anytime.
+    </p>
+    <div class="d-flex gap-2 align-items-end flex-wrap">
         <div>
-            <label class="form-label small">Iterations to run now</label>
-            <input type="number" id="max-iters" class="form-control" value="8" min="1" max="50" style="width: 120px;">
+            <label class="form-label small mb-1">Iterations to run now</label>
+            <input type="number" id="max-iters" class="form-control form-control-sm" value="8" min="1" max="50" style="width:100px">
         </div>
         <button id="start-btn" class="btn btn-primary" onclick="startRun()">
             <i class="bi bi-play-circle"></i> Start
         </button>
+        <div class="text-muted small align-self-end">
+            Techniques tried so far: <span id="arm-summary">—</span>
+        </div>
     </div>
 </div>
 
-<!-- Live activity log. The SSE handler appends one row per event. -->
+<!-- Live activity -->
 <div class="card p-4 mb-3">
-    <h5>Live activity</h5>
-    <div id="activity" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 0.85em;"></div>
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Live activity</h5>
+        <div class="d-flex gap-3 small">
+            <span class="text-muted">● propose</span>
+            <span class="text-info">● audit</span>
+            <span class="text-success">● trial complete</span>
+            <span class="text-warning fw-bold">● terminated</span>
+            <span class="text-danger">● error</span>
+        </div>
+    </div>
+
+    <!-- Running best metric badge -->
+    <div id="live-stats" class="mb-2 d-none">
+        <span class="badge bg-secondary me-2">Trials completed: <span id="live-trials">0</span></span>
+        <span class="badge bg-primary me-2">Best metric so far: <span id="live-best">—</span></span>
+        <span class="badge bg-dark">Cost spent: $<span id="live-cost">0.00</span></span>
+    </div>
+
+    <div id="activity" style="max-height:400px;overflow-y:auto;font-family:monospace;font-size:0.82em;line-height:1.6;"></div>
 </div>
 
-<!-- Finalize section -->
+<!-- Stub mode explainer (anchor target from info banner) -->
+<div id="stub-explainer" class="card border-warning p-4 mb-3">
+    <h5><i class="bi bi-exclamation-triangle text-warning"></i> Why are all metrics 0.000?</h5>
+    <p class="mb-2 small">
+        The framework is running in <strong>stub mode</strong> because no <code>ANTHROPIC_API_KEY</code> is set.
+        In stub mode, every LLM call returns a deterministic hash string like
+        <code>[stub:claude-haiku-4-5:abc123] Answer for input len 42.</code>
+        — the judge scores these as 0 because they contain no real answer content.
+    </p>
+    <p class="mb-2 small">
+        <strong>This is actually useful</strong> — it proves the full pipeline works end-to-end without
+        spending any money. Once you add an API key, the same pipeline produces real scores.
+    </p>
+    <div class="bg-light rounded p-3 small font-monospace mb-0">
+        <strong>To get real results — do ONE of these:</strong><br><br>
+        <strong>Option A (Docker):</strong> Stop the container, edit <code>.env</code> at repo root,
+        set <code>ANTHROPIC_API_KEY=sk-ant-api03-...</code>, then run <code>docker compose up --build</code><br><br>
+        <strong>Option B (shell):</strong> <code>$env:ANTHROPIC_API_KEY = "sk-ant-..."</code>
+        (PowerShell) or <code>export ANTHROPIC_API_KEY="sk-ant-..."</code> (bash),
+        then restart uvicorn<br><br>
+        <strong>Which model to use:</strong> Type your model id in the Upload page's Model field
+        (e.g. <code>claude-sonnet-4-6</code> or <code>claude-haiku-4-5</code>).
+        Haiku is cheapest for experiments.
+    </div>
+</div>
+
+<!-- Finalize -->
 <div class="card p-4">
     <h5>Finalize</h5>
-    <p class="small text-muted">When you're satisfied, generate FINAL.md.</p>
+    <p class="small text-muted">
+        When you're satisfied with the results (or want to see the recommendation even now),
+        click Finalize. It writes <code>results/FINAL.md</code> with a confidence tier, counterfactual
+        delta, and retraction conditions.
+        <strong>Confidence will be <code>no_signal</code> in stub mode</strong> — that's expected.
+    </p>
     <button class="btn btn-success" onclick="finalize()">
         <i class="bi bi-file-earmark-text"></i> Finalize — produce FINAL.md
     </button>
@@ -50,83 +131,206 @@
 </div>
 
 <script>
-// --- Server-Sent Events: live progress streaming ---
-// On click, we POST to /run/start and read the SSE stream of progress events,
-// appending each one to the activity log as it arrives.
-let eventSource = null;
+// ---------------------------------------------------------------------------
+// Phase labels — plain English descriptions shown in the activity log
+// ---------------------------------------------------------------------------
+const PHASE_LABELS = {
+    propose:    'Proposing variant',
+    audit:      'Auditor check',
+    run:        'Running trial',
+    recorded:   'Recorded',
+    terminated: 'TERMINATED',
+    error:      'ERROR',
+};
 
+const PHASE_CSS = {
+    propose:    'text-muted',
+    audit:      'text-info',
+    run:        'text-success',
+    recorded:   'text-secondary',
+    terminated: 'text-warning fw-bold',
+    error:      'text-danger fw-bold',
+};
+
+// Track arm usage counts for the summary line
+const armCounts = {};
+let trialsCompleted = 0;
+let bestMetric = null;
+let totalCost = 0;
+let maxIters = 0;
+
+// ---------------------------------------------------------------------------
+// SSE reader
+// ---------------------------------------------------------------------------
 async function startRun() {
-    const iters = document.getElementById('max-iters').value;
+    const iters = parseInt(document.getElementById('max-iters').value, 10);
+    maxIters = iters;
     const activity = document.getElementById('activity');
-    activity.innerHTML += '<div class="text-muted">Starting...</div>';
+    const startBtn = document.getElementById('start-btn');
+
+    activity.innerHTML += '<div class="text-muted border-top pt-2 mt-1">▶ Starting batch of ' + iters + ' iterations…</div>';
+    startBtn.disabled = true;
+    startBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Running…';
+    document.getElementById('live-stats').classList.remove('d-none');
 
     const fd = new FormData();
     fd.append('max_iters', iters);
-    const res = await fetch('/projects/{{ name }}/run/start', { method: 'POST', body: fd });
-    if (!res.body) {
-        activity.innerHTML += '<div class="text-danger">No response body</div>';
-        return;
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = '';
-    while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        // SSE messages are separated by blank lines.
-        const parts = buf.split('\n\n');
-        buf = parts.pop();
-        for (const part of parts) {
-            const dataLine = part.split('\n').find(l => l.startsWith('data:'));
-            if (!dataLine) continue;
-            try {
-                const e = JSON.parse(dataLine.slice(5).trim());
-                appendEvent(e);
-            } catch (err) { /* ignore */ }
+
+    try {
+        const res = await fetch('/projects/{{ name }}/run/start', { method: 'POST', body: fd });
+        if (!res.body) {
+            activity.innerHTML += '<div class="text-danger">No streaming body from server.</div>';
+            return;
         }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const parts = buf.split('\n\n');
+            buf = parts.pop();     // keep incomplete chunk
+
+            for (const part of parts) {
+                // Skip non-data lines (e.g. "event: done")
+                const dataLine = part.split('\n').find(l => l.startsWith('data:'));
+                if (!dataLine) continue;
+
+                let e;
+                try { e = JSON.parse(dataLine.slice(5).trim()); } catch { continue; }
+
+                // Skip the terminal empty object sent by "event: done\ndata: {}"
+                if (!e.phase) continue;
+
+                appendEvent(e);
+                updateLiveStats(e);
+            }
+        }
+    } catch (err) {
+        activity.innerHTML += `<div class="text-danger">Stream error: ${err}</div>`;
+    } finally {
+        activity.innerHTML += '<div class="text-success fw-bold border-top pt-2 mt-1">✓ Batch complete — ' + trialsCompleted + ' trial(s) recorded this batch.</div>';
+        startBtn.disabled = false;
+        startBtn.innerHTML = '<i class="bi bi-play-circle"></i> Start another batch';
+        updateArmSummary();
+        // Refresh the trial counter in the header card
+        document.getElementById('trials-counter').textContent =
+            ({{ n_trials }} + trialsCompleted) + ' / {{ mission.max_iterations }}';
     }
-    activity.innerHTML += '<div class="text-success fw-bold">Batch complete.</div>';
 }
 
+// ---------------------------------------------------------------------------
+// Render one event row
+// ---------------------------------------------------------------------------
 function appendEvent(e) {
     const activity = document.getElementById('activity');
-    let cls = 'text-muted';
-    if (e.phase === 'audit') cls = 'text-info';
-    if (e.phase === 'run') cls = 'text-success';
-    if (e.phase === 'terminated') cls = 'text-warning fw-bold';
-    if (e.phase === 'error') cls = 'text-danger';
-    const metric = e.metric !== null && e.metric !== undefined ? ` · metric=${e.metric.toFixed(3)}` : '';
-    const spent = e.spent !== null && e.spent !== undefined ? ` · $${e.spent.toFixed(2)}` : '';
-    activity.innerHTML += `<div class="${cls}">[iter ${e.iter}] ${e.phase}${e.arm ? ' · ' + e.arm : ''}${metric}${spent} — ${e.message}</div>`;
+    const cls     = PHASE_CSS[e.phase] || 'text-muted';
+    const label   = PHASE_LABELS[e.phase] || e.phase;
+
+    // Build metric + cost suffix only when they exist and the trial ran
+    let suffix = '';
+    if (e.phase === 'run') {
+        const m = (e.metric !== null && e.metric !== undefined) ? e.metric.toFixed(3) : '—';
+        const c = (e.spent  !== null && e.spent  !== undefined) ? '$' + e.spent.toFixed(2) : '';
+        suffix = ` &nbsp;<strong>score=${m}</strong>${c ? ' &nbsp;total cost ' + c : ''}`;
+    }
+
+    // Arm badge
+    const armBadge = e.arm ? `<span class="badge text-bg-secondary me-1" style="font-size:0.7em">${e.arm}</span>` : '';
+
+    // Audit verdict highlight
+    let msg = e.message || '';
+    if (e.phase === 'audit') {
+        msg = msg.replace('WARN',   '<span class="text-warning">WARN</span>');
+        msg = msg.replace('ACCEPT', '<span class="text-success">ACCEPT</span>');
+        msg = msg.replace('FAIL',   '<span class="text-danger">FAIL</span>');
+        msg = msg.replace('CATASTROPHIC', '<span class="text-danger fw-bold">CATASTROPHIC</span>');
+    }
+
+    activity.innerHTML +=
+        `<div class="${cls}">[iter ${e.iter}] ${label} ${armBadge}${suffix} — ${msg}</div>`;
     activity.scrollTop = activity.scrollHeight;
 }
 
+// ---------------------------------------------------------------------------
+// Update live stats badges
+// ---------------------------------------------------------------------------
+function updateLiveStats(e) {
+    if (e.phase === 'run') {
+        trialsCompleted++;
+        document.getElementById('live-trials').textContent = trialsCompleted;
+
+        if (e.metric !== null && e.metric !== undefined) {
+            if (bestMetric === null || e.metric > bestMetric) {
+                bestMetric = e.metric;
+                document.getElementById('live-best').textContent = bestMetric.toFixed(3);
+            }
+        }
+        if (e.spent !== null && e.spent !== undefined) {
+            totalCost = e.spent;
+            document.getElementById('live-cost').textContent = totalCost.toFixed(2);
+        }
+        if (e.arm) {
+            armCounts[e.arm] = (armCounts[e.arm] || 0) + 1;
+        }
+    }
+}
+
+function updateArmSummary() {
+    const entries = Object.entries(armCounts);
+    if (!entries.length) return;
+    document.getElementById('arm-summary').textContent =
+        entries.map(([k, v]) => `${k}(${v})`).join(', ');
+}
+
+// ---------------------------------------------------------------------------
+// Finalize
+// ---------------------------------------------------------------------------
 async function finalize() {
     const result = document.getElementById('finalize-result');
-    result.innerHTML = '<div class="text-muted"><span class="spinner-border spinner-border-sm"></span> Finalizing...</div>';
+    result.innerHTML = '<div class="text-muted"><span class="spinner-border spinner-border-sm"></span> Assembling recommendation…</div>';
     try {
         const res = await fetch('/projects/{{ name }}/run/finalize', { method: 'POST' });
-        const j = await res.json();
+        const j   = await res.json();
         if (res.ok) {
             const isNoSignal = j.confidence === 'no_signal';
-            const alertCls = isNoSignal ? 'alert-warning' : 'alert-success';
+            const cls  = isNoSignal ? 'alert-warning' : 'alert-success';
             const icon = isNoSignal ? 'bi-exclamation-triangle' : 'bi-check-circle';
+            const trialNote = j.n_trials !== undefined
+                ? `<span class="text-muted small ms-2">${j.n_trials} trial(s) in log</span>` : '';
+
+            // Plain-English confidence explanation
+            const confExplain = {
+                high:      'Strong evidence — multiple trials agree, CIs are tight.',
+                medium:    'Moderate evidence — effect exists but small sample or wide CIs.',
+                low:       'Weak evidence — only one supporting trial or known caveats.',
+                no_signal: 'No reliable winner found. In stub mode this is expected (all scores=0). Add an API key and re-run to get real scores.',
+            }[j.confidence] || '';
+
             result.innerHTML = `
-                <div class="alert ${alertCls}">
-                    <i class="bi ${icon}"></i>
-                    <strong>Confidence: ${j.confidence}</strong>
-                    ${j.n_trials !== undefined ? ` &nbsp;·&nbsp; ${j.n_trials} trial(s) recorded` : ''}
-                    <br>${j.decision}
-                    <div class="mt-2">
-                        <a class="btn btn-sm btn-primary" href="/projects/{{ name }}/results">View FINAL.md →</a>
-                        <a class="btn btn-sm btn-outline-primary" href="/projects/{{ name }}/chat">Chat with winner →</a>
+                <div class="alert ${cls}">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi ${icon} fs-5"></i>
+                        <strong>Confidence: <code>${j.confidence}</code></strong>
+                        ${trialNote}
+                    </div>
+                    <div class="small mb-2 text-muted">${confExplain}</div>
+                    <div>${j.decision}</div>
+                    <div class="mt-3 d-flex gap-2 flex-wrap">
+                        <a class="btn btn-sm btn-primary" href="/projects/{{ name }}/results">
+                            <i class="bi bi-file-earmark-text"></i> View FINAL.md
+                        </a>
+                        <a class="btn btn-sm btn-outline-secondary" href="/projects/{{ name }}/chat">
+                            <i class="bi bi-chat-dots"></i> Chat with winning variant
+                        </a>
                     </div>
                 </div>`;
         } else {
-            // j.detail is the "Finalize failed: <actual exception>" string.
             result.innerHTML = `<div class="alert alert-danger">
-                <strong>Error</strong><br><code>${j.detail || 'Finalize failed — check Docker logs for the full traceback.'}</code>
+                <strong><i class="bi bi-x-circle"></i> Error</strong><br>
+                <code>${j.detail || 'Finalize failed — check Docker logs for the full traceback.'}</code>
             </div>`;
         }
     } catch (err) {

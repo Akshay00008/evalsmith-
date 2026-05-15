@@ -11,6 +11,51 @@
 
 <h1><i class="bi bi-file-earmark-text"></i> Results</h1>
 
+<!-- Field-by-field explainer so the report isn't a black box -->
+<div class="accordion mb-3" id="explainer-acc">
+  <div class="accordion-item border-info">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed py-2 small bg-info bg-opacity-10" type="button"
+              data-bs-toggle="collapse" data-bs-target="#exp-body">
+        <i class="bi bi-question-circle me-2"></i>
+        <strong>How to read this report</strong> — click to expand
+      </button>
+    </h2>
+    <div id="exp-body" class="accordion-collapse collapse">
+      <div class="accordion-body small">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <h6>Confidence tiers</h6>
+            <table class="table table-sm table-bordered mb-0">
+              <tr><td><code>high</code></td><td>3+ trials agree, CIs tight, judge calibration OK. Ready to ship.</td></tr>
+              <tr><td><code>medium</code></td><td>Effect exists but small sample or wide uncertainty. Treat as directional.</td></tr>
+              <tr><td><code>low</code></td><td>Only one supporting trial or known caveats. Don't ship without more data.</td></tr>
+              <tr class="table-warning"><td><code>no_signal</code></td><td>No variant beat any other. In <strong>stub mode</strong> (no API key) this is always the result — add a key and re-run.</td></tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6>Counterfactual section</h6>
+            <ul class="mb-2">
+              <li><strong>Baseline</strong> — score of the weakest trial (the naive starting point)</li>
+              <li><strong>Winner</strong> — score of the best trial</li>
+              <li><strong>Δ</strong> — winner minus baseline. Positive = improvement</li>
+              <li><strong>Cost Δ per 1k requests</strong> — how much more/less the winner costs to run at scale</li>
+              <li><strong>p95 latency Δ</strong> — how much slower/faster the winner is at the 95th percentile</li>
+            </ul>
+            <h6>Retraction conditions</h6>
+            <p class="mb-0">Automatically generated guardrails — these tell you when to <em>un-ship</em> the winner and re-run the framework with fresh data.</p>
+          </div>
+        </div>
+        <div class="alert alert-warning small mb-0 mt-3 py-2">
+          <strong>Seeing all-zero metrics?</strong> You're in stub mode — no <code>ANTHROPIC_API_KEY</code> is set.
+          Set the key in <code>.env</code> at the repo root, rebuild Docker (<code>docker compose up --build</code>),
+          delete the old project or reset the trial log, then re-run. Real LLM calls produce non-zero judge scores.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="card p-4 mb-3">
     <!-- We let the browser render the markdown via marked.js so we don't need a Python markdown lib. -->
     <div id="final-md" data-md="{{ final_md|e }}">Loading…</div>
